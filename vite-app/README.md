@@ -19,3 +19,9 @@ To use the components in your app, import them as follows:
 ```tsx
 import { Button } from "@/components/ui/button"
 ```
+
+
+
+-  we need home page 
+- we need my avatar table or any avatar icon 
+- we need clean feed for any one use craft ui components
