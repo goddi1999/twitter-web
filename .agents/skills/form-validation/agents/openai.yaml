@@ -1,0 +1,3 @@
+interface:
+  display_name: "Form Validation"
+  short_description: "RHF + Zod form validation for WQ"

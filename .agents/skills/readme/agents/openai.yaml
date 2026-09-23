@@ -1,0 +1,3 @@
+interface:
+  display_name: "README"
+  short_description: "Generate or audit project READMEs"
