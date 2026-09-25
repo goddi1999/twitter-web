@@ -25,27 +25,25 @@ function AuthorRow({ author, createdAt }: { author: Author; createdAt: Date }) {
   const initials = author.displayName.slice(0, 2).toUpperCase()
 
   return (
-    <div className="flex min-w-0 items-start gap-3">
-      <Avatar size="sm" className="mt-0.5">
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar size="sm" className="shrink-0">
         <AvatarImage src={author.avatarUrl} alt={author.displayName} />
         <AvatarFallback>{initials}</AvatarFallback>
       </Avatar>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-sm leading-tight">
-          <span className="truncate font-semibold text-foreground">{author.displayName}</span>
-          <BadgeCheck
-            className="size-4 shrink-0 fill-sky-500 text-sky-500"
-            aria-label="Verified"
-          />
-          <span className="truncate text-muted-foreground">@{author.handle}</span>
-          <span className="text-muted-foreground">·</span>
-          <time
-            className="shrink-0 text-muted-foreground"
-            dateTime={createdAt.toISOString()}
-          >
-            {formatRelativeTime(createdAt)}
-          </time>
-        </div>
+      <div className="flex min-w-0 flex-1 items-center gap-x-1 text-sm leading-none">
+        <span className="truncate font-semibold text-foreground">{author.displayName}</span>
+        <BadgeCheck
+          className="size-4 shrink-0 fill-sky-500 text-sky-500"
+          aria-label="Verified"
+        />
+        <span className="truncate text-muted-foreground">@{author.handle}</span>
+        <span className="shrink-0 text-muted-foreground">·</span>
+        <time
+          className="shrink-0 text-muted-foreground"
+          dateTime={createdAt.toISOString()}
+        >
+          {formatRelativeTime(createdAt)}
+        </time>
       </div>
     </div>
   )
