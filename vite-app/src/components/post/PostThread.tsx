@@ -112,37 +112,39 @@ export function PostThread({ post, onBack, onLike, className }: PostThreadProps)
             {post.getText()}
           </p>
 
-          <time
-            className="mt-3 block text-sm text-muted-foreground"
-            dateTime={createdAt.toISOString()}
-          >
-            {formatRelativeTime(createdAt)}
-          </time>
-
-          <Separator className="my-3" />
-
-          <p className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{likeCount}</span> Likes
-          </p>
-
-          <Separator className="my-3" />
-
-          <div className="flex max-w-md items-center justify-between gap-4 py-1 text-muted-foreground">
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs"
-              aria-label={`${comments.length} comments`}
-            >
-              <MessageCircle className="size-5" />
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 text-xs transition-colors hover:text-rose-500"
-              onClick={() => onLike(post)}
-              aria-label={`Like, ${likeCount} likes`}
-            >
-              <Heart className="size-5" />
-            </button>
+          <div className="mt-3 flex flex-nowrap items-center gap-3 overflow-x-auto text-sm text-muted-foreground">
+            <time className="shrink-0 whitespace-nowrap" dateTime={createdAt.toISOString()}>
+              {formatRelativeTime(createdAt)}
+            </time>
+            <span className="shrink-0 text-border" aria-hidden>
+              ·
+            </span>
+            <p className="shrink-0 whitespace-nowrap">
+              <span className="font-semibold text-foreground">{likeCount}</span> Likes
+            </p>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-muted-foreground"
+                aria-label={`${comments.length} comments`}
+              >
+                <MessageCircle className="size-4" />
+                <span>{comments.length}</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-muted-foreground"
+                onClick={() => onLike(post)}
+                aria-label={`Like, ${likeCount} likes`}
+              >
+                <Heart className="size-4" />
+                <span>{likeCount}</span>
+              </Button>
+            </div>
           </div>
         </div>
 

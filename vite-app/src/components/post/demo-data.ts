@@ -3,12 +3,19 @@ import { getRandomAvatar, withImageUrl } from '@wq-org/avatars'
 import { Comment, Post } from './post.model'
 import type { Author } from './post.types'
 
+const SAMPLE_TEXTS = [
+  'Just shipped a reusable Post component with likes and threaded comments. Clean structure, Card + BlurredScrollArea, random wq avatars.',
+  'Working through the Post API today: like() only increments, text max 280, comments carry text + timestamp. Domain first, UI second. Keep validation in the model so the UI stays thin and honest about empty or oversized text.',
+  'Thread view open in a Sheet: one post, vertical reply line, MessageCircle + Heart. Feels close to the reference without cloning the whole app chrome. Expand the card text when it runs past four lines.',
+  'Tiny reminder: empty text is invalid, and setText throws when you go over 280. Keep the model honest.',
+  'Demo seed with a handful of posts so the grid actually fills. Scroll down to load more cards with endless scroll. Click a card to open the thread Sheet on the side.',
+  'Grid layout uses a fixed card width and auto-fill columns so wider screens show more posts side by side. Icons stay left; Expand sits on the right under clamped text.',
+  'Relative timestamps only — no AM/PM calendar strings. Avatars come from @wq-org/avatars getRandomAvatar with CDN imageUrl attached for the Avatar image.',
+  'Comments are seeded for the demo. addComment and removeComment live on the Post class even when the thread UI is read-only in v1.',
+]
+
 function minutesAgo(minutes: number): Date {
   return new Date(Date.now() - minutes * 60_000)
-}
-
-function hoursAgo(hours: number): Date {
-  return new Date(Date.now() - hours * 3_600_000)
 }
 
 function randomAuthor(): Author {
@@ -24,66 +31,37 @@ function randomAuthor(): Author {
   }
 }
 
-export function createDemoPosts(): Post[] {
-  const authors = [randomAuthor(), randomAuthor(), randomAuthor(), randomAuthor(), randomAuthor()]
-
-  const posts: Post[] = [
-    new Post(
-      'Just shipped a reusable Post component with likes and threaded comments. Clean structure, Card + BlurredScrollArea, random wq avatars.',
-      authors[0],
-      hoursAgo(1),
-    ),
-    new Post(
-      'Working through the Post API today: like() only increments, text max 280, comments carry text + timestamp. Domain first, UI second.',
-      authors[1],
-      hoursAgo(3),
-    ),
-    new Post(
-      'Thread view open in a Sheet: one post, vertical reply line, MessageCircle + Heart. Feels close to the reference without cloning the whole app chrome.',
-      authors[2],
-      hoursAgo(5),
-    ),
-    new Post(
-      'Tiny reminder: empty text is invalid, and setText throws when you go over 280. Keep the model honest.',
-      authors[3],
-      minutesAgo(40),
-    ),
-    new Post(
-      'Demo seed with a handful of posts so BlurredScrollArea actually has something to fade. Click a card to open the thread.',
-      authors[4],
-      minutesAgo(12),
-    ),
-  ]
-
-  posts[0].addComment(
-    new Comment('This layout looks solid — love the relative timestamps.', authors[1], minutesAgo(50)),
+function decoratePost(post: Post, authors: Author[], index: number): void {
+  const commentAuthor = authors[(index + 1) % authors.length]
+  post.addComment(
+    new Comment('Nice take — thanks for sharing.', commentAuthor, minutesAgo(5 + index)),
   )
-  posts[0].addComment(
-    new Comment('Does open() use a Sheet? Nice touch.', authors[2], minutesAgo(35)),
-  )
-  posts[0].like()
-  posts[0].like()
-  posts[0].like()
+  if (index % 2 === 0) {
+    post.addComment(
+      new Comment('Opening the thread from the grid feels natural.', authors[index % authors.length], minutesAgo(2 + index)),
+    )
+  }
+  const likes = (index % 4) + 1
+  for (let i = 0; i < likes; i += 1) {
+    post.like()
+  }
+}
 
-  posts[1].addComment(new Comment('Domain classes make the React layer so much thinner.', authors[0], hoursAgo(2)))
-  posts[1].like()
+export function createDemoPostBatch(count: number, offset = 0): Post[] {
+  const authors = Array.from({ length: Math.min(count, 8) }, () => randomAuthor())
+  const posts: Post[] = []
 
-  posts[2].addComment(new Comment('Replying to the thread line specifically — that reads well.', authors[3], hoursAgo(4)))
-  posts[2].addComment(new Comment('Heart + MessageCircle is enough for v1.', authors[4], hoursAgo(3)))
-  posts[2].addComment(new Comment('Skipping retweet/share was the right call.', authors[0], hoursAgo(2)))
-  posts[2].like()
-  posts[2].like()
-
-  posts[3].addComment(
-    new Comment('Good — keep validation in the model, not only the form.', authors[2], minutesAgo(25)),
-  )
-  posts[3].like()
-
-  posts[4].addComment(new Comment('Opening from the feed feels natural.', authors[1], minutesAgo(8)))
-  posts[4].like()
-  posts[4].like()
-  posts[4].like()
-  posts[4].like()
+  for (let i = 0; i < count; i += 1) {
+    const text = SAMPLE_TEXTS[(offset + i) % SAMPLE_TEXTS.length]
+    const author = authors[i % authors.length]
+    const post = new Post(text, author, minutesAgo(10 + offset + i * 7))
+    decoratePost(post, authors, offset + i)
+    posts.push(post)
+  }
 
   return posts
+}
+
+export function createDemoPosts(): Post[] {
+  return createDemoPostBatch(8)
 }

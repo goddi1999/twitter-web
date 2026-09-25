@@ -7,10 +7,11 @@ export function PostPage() {
     <DemoPage
       eyebrow="shared / post"
       title="Post"
-      description="Reusable feed cards and a thread Sheet. Like increments on the Post model; open a card to read comments."
+      description="Fixed-width cards in a responsive grid. Text clamps at four lines with Expand; scroll for more."
       align="center"
+      className="max-w-7xl"
     >
-      <div className="mx-auto w-full max-w-xl pb-24 text-left">
+      <div className="w-full pb-24">
         <PostFeed />
       </div>
     </DemoPage>
