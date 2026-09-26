@@ -1,23 +1,29 @@
 import type { PostDto } from './posts'
 
-/** Ephemeral in-memory store (Edge-safe, no DB). Resets on cold start. */
-const posts = new Map<string, PostDto>()
+/**
+ * Append-only publish log (Edge-safe, no DB).
+ * Never overwrites — each client publish is a new entry.
+ * Resets on cold start; will move to Supabase later.
+ */
+const publishes: PostDto[] = []
 
-export function getAllPosts(): PostDto[] {
-  return [...posts.values()].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  )
+/** All publishes, newest first. */
+export function getAllPublishes(): PostDto[] {
+  return [...publishes].reverse()
 }
 
-export function getStoredPost(id: string): PostDto | undefined {
-  return posts.get(id)
+/** Latest publish for a logical post id (avatar reuse), or undefined. */
+export function getLatestPublish(postId: string): PostDto | undefined {
+  for (let i = publishes.length - 1; i >= 0; i -= 1) {
+    if (publishes[i]?.id === postId) {
+      return publishes[i]
+    }
+  }
+  return undefined
 }
 
-export function savePost(post: PostDto): PostDto {
-  posts.set(post.id, post)
+/** Append only — never replaces an existing entry. */
+export function appendPublish(post: PostDto): PostDto {
+  publishes.push(post)
   return post
-}
-
-export function deleteStoredPost(id: string): boolean {
-  return posts.delete(id)
 }

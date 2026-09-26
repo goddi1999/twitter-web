@@ -1,7 +1,10 @@
-import { getAllPosts, getStoredPost, savePost } from './store'
+import { getRandomAvatar, withImageUrl } from '@wq-org/avatars'
+
+import { appendPublish, getAllPublishes, getLatestPublish } from './store'
 
 export const MAX_TEXT_LENGTH = 280
 
+/** Stored / response author — fully server-assigned from @wq-org/avatars. */
 export type Author = {
   displayName: string
   handle: string
@@ -24,10 +27,18 @@ export type PostDto = {
   createdAt: string
 }
 
-const DEFAULT_AUTHOR: Author = {
-  displayName: 'HSRT Student',
-  handle: 'hsrtstudent',
-  avatarUrl: 'https://api.dicebear.com/9.x/thumbs/svg?seed=hsrt',
+/** Pick a random memoji and map it to Author (name → displayName + handle). */
+export function randomAuthor(): Author {
+  const avatar = withImageUrl(getRandomAvatar())
+  const handle = avatar.name.toLowerCase().replace(/[^a-z0-9]+/g, '')
+  if (!handle) {
+    throw new Error(`Could not derive handle from avatar name: ${avatar.name}`)
+  }
+  return {
+    displayName: avatar.name,
+    handle,
+    avatarUrl: avatar.imageUrl,
+  }
 }
 
 export function assertValidText(text: unknown, label = 'Text'): string {
@@ -41,77 +52,101 @@ export function assertValidText(text: unknown, label = 'Text'): string {
   return trimmed
 }
 
-export function normalizeAuthor(input: unknown): Author {
-  if (!input || typeof input !== 'object') {
-    return DEFAULT_AUTHOR
-  }
-  const raw = input as Record<string, unknown>
-  const displayName =
-    typeof raw.displayName === 'string' && raw.displayName.trim()
-      ? raw.displayName.trim()
-      : DEFAULT_AUTHOR.displayName
-  const handle =
-    typeof raw.handle === 'string' && raw.handle.trim()
-      ? raw.handle.trim().replace(/^@/, '')
-      : DEFAULT_AUTHOR.handle
-  const avatarUrl =
-    typeof raw.avatarUrl === 'string' && raw.avatarUrl.trim()
-      ? raw.avatarUrl.trim()
-      : DEFAULT_AUTHOR.avatarUrl
-  return { displayName, handle, avatarUrl }
+/**
+ * Author identity is server-owned. Client must not send displayName / avatarUrl / handle —
+ * any `author` field on the request is ignored.
+ * Reuses the previous author when republishing the same post/comment id.
+ */
+export function resolveAuthor(_input: unknown, previous?: Author): Author {
+  return previous ?? randomAuthor()
 }
 
+function assertNonNegativeInt(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new Error(`${label} muss eine nicht-negative Ganzzahl sein.`)
+  }
+  return value
+}
+
+function parseComment(
+  input: unknown,
+  index: number,
+  previousById: Map<string, CommentDto>,
+): CommentDto {
+  if (!input || typeof input !== 'object') {
+    throw new Error(`comments[${index}] ist ungültig.`)
+  }
+  const raw = input as Record<string, unknown>
+  const id =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim()
+      : crypto.randomUUID()
+  const text = assertValidText(raw.text, `Kommentar[${index}]`)
+  const timestamp =
+    typeof raw.timestamp === 'string' && raw.timestamp.trim()
+      ? raw.timestamp.trim()
+      : new Date().toISOString()
+  const previous = previousById.get(id)
+  const author = resolveAuthor(raw.author, previous?.author)
+  return { id, text, timestamp, author }
+}
+
+/**
+ * Accepts a full post document for a new publish.
+ * Client must not send avatarUrl — server assigns random wq-avatars URLs.
+ */
+export function parseFullPost(input: unknown, previous?: PostDto | null): PostDto {
+  if (!input || typeof input !== 'object') {
+    throw new Error('post ist erforderlich.')
+  }
+  const raw = input as Record<string, unknown>
+
+  const text = assertValidText(raw.text)
+  const likeCount =
+    raw.likeCount === undefined ? 0 : assertNonNegativeInt(raw.likeCount, 'likeCount')
+
+  if (raw.comments !== undefined && !Array.isArray(raw.comments)) {
+    throw new Error('comments muss ein Array sein.')
+  }
+
+  const id =
+    typeof raw.id === 'string' && raw.id.trim()
+      ? raw.id.trim()
+      : crypto.randomUUID()
+
+  const existing = previous ?? getLatestPublish(id) ?? null
+  const previousComments = new Map(
+    (existing?.comments ?? []).map((comment) => [comment.id, comment]),
+  )
+
+  const comments = Array.isArray(raw.comments)
+    ? raw.comments.map((comment, index) =>
+        parseComment(comment, index, previousComments),
+      )
+    : []
+
+  const author = resolveAuthor(raw.author, existing?.author)
+  const createdAt =
+    typeof raw.createdAt === 'string' && raw.createdAt.trim()
+      ? raw.createdAt.trim()
+      : (existing?.createdAt ?? new Date().toISOString())
+
+  return { id, text, likeCount, comments, author, createdAt }
+}
+
+/** Newest publishes first (append log, not deduped). */
 export function listPosts(): PostDto[] {
-  return getAllPosts()
+  return getAllPublishes()
 }
 
 export function getPost(postId: string): PostDto | null {
-  return getStoredPost(postId) ?? null
+  return getLatestPublish(postId) ?? null
 }
 
-export function createPost(text: string, author: Author): PostDto {
-  const post: PostDto = {
-    id: crypto.randomUUID(),
-    text,
-    likeCount: 0,
-    comments: [],
-    author,
-    createdAt: new Date().toISOString(),
-  }
-  return savePost(post)
-}
-
-export function likePost(postId: string): PostDto | null {
-  const existing = getStoredPost(postId)
-  if (!existing) return null
-  return savePost({ ...existing, likeCount: existing.likeCount + 1 })
-}
-
-export function addComment(
-  postId: string,
-  text: string,
-  author: Author,
-): PostDto | null {
-  const existing = getStoredPost(postId)
-  if (!existing) return null
-  const comment: CommentDto = {
-    id: crypto.randomUUID(),
-    text,
-    timestamp: new Date().toISOString(),
-    author,
-  }
-  return savePost({
-    ...existing,
-    comments: [...existing.comments, comment],
-  })
-}
-
-export function removeComment(postId: string, commentId: string): PostDto | null {
-  const existing = getStoredPost(postId)
-  if (!existing) return null
-  const next = existing.comments.filter((c) => c.id !== commentId)
-  if (next.length === existing.comments.length) {
-    throw new Error('Kommentar nicht gefunden.')
-  }
-  return savePost({ ...existing, comments: next })
+/**
+ * Append a publish. Never overwrites prior entries.
+ * Likes / comment changes from the app are just another publish of the full post.
+ */
+export function publishPost(post: PostDto): PostDto {
+  return appendPublish(post)
 }
