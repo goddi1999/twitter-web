@@ -1,5 +1,5 @@
-import { error, json, options } from '../lib/http'
-import { listPosts, listPublishes } from '../lib/posts'
+import { error, json, options } from '../lib/http.js'
+import { listPosts, listPublishes } from '../lib/posts.js'
 
 export const config = {
   runtime: 'edge',

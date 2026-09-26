@@ -47,6 +47,8 @@ npm run typecheck
 
 Deploy with the Vite app (see `../vercel.json`: framework `vite`, `outputDirectory` `dist`, SPA rewrite that leaves `/api/*` alone).
 
+**Vercel Root Directory must be `vite-app`** (the folder that contains `package.json`). If Root Directory is the repo root, install is skipped and the build fails with `vite: command not found`.
+
 ## Usage
 
 With `vercel dev` running, base URL is typically `http://localhost:3000`.

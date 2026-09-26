@@ -1,6 +1,11 @@
 import { getRandomAvatar, withImageUrl } from '@wq-org/avatars'
 
-import { appendPublish, getAllPublishes, getLatestPostsById, getLatestPublish } from './store'
+import {
+  appendPublish,
+  getAllPublishes,
+  getLatestPostsById,
+  getLatestPublish,
+} from './store.js'
 
 export const MAX_TEXT_LENGTH = 280
 
@@ -115,7 +120,7 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
   const id = raw.id.trim()
 
   const existing = previous ?? getLatestPublish(id) ?? null
-  const previousComments = new Map(
+  const previousComments = new Map<string, CommentDto>(
     (existing?.comments ?? []).map((comment) => [comment.id, comment]),
   )
 

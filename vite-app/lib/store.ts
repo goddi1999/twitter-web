@@ -1,4 +1,4 @@
-import type { PostDto } from './posts'
+import type { PostDto } from './posts.js'
 
 /**
  * Append-only publish log (Edge-safe, no DB).
