@@ -19,10 +19,20 @@ type PostCardProps = {
   post: Post
   onOpen?: (post: Post) => void
   onLike?: (post: Post) => void
+  /** Show verified badge when the author has more than 3 posts in the feed. */
+  verified?: boolean
   className?: string
 }
 
-function AuthorRow({ author, createdAt }: { author: Author; createdAt: Date }) {
+function AuthorRow({
+  author,
+  createdAt,
+  verified = false,
+}: {
+  author: Author
+  createdAt: Date
+  verified?: boolean
+}) {
   const initials = author.displayName.slice(0, 2).toUpperCase()
 
   return (
@@ -33,10 +43,12 @@ function AuthorRow({ author, createdAt }: { author: Author; createdAt: Date }) {
       </Avatar>
       <div className="flex min-w-0 flex-1 items-center gap-x-1 text-sm leading-none">
         <span className="truncate font-semibold text-foreground">{author.displayName}</span>
-        <BadgeCheck
-          className="size-4 shrink-0 fill-sky-500 text-sky-500"
-          aria-label="Verified"
-        />
+        {verified ? (
+          <BadgeCheck
+            className="size-4 shrink-0 fill-sky-500 text-sky-500"
+            aria-label="Verified"
+          />
+        ) : null}
         <span className="truncate text-muted-foreground">@{author.handle}</span>
         <span className="shrink-0 text-muted-foreground">·</span>
         <time
@@ -50,7 +62,13 @@ function AuthorRow({ author, createdAt }: { author: Author; createdAt: Date }) {
   )
 }
 
-export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
+export function PostCard({
+  post,
+  onOpen,
+  onLike,
+  verified = false,
+  className,
+}: PostCardProps) {
   const author = post.getAuthor()
   const createdAt = post.getCreatedAt()
   const [expanded, setExpanded] = useState(false)
@@ -81,7 +99,7 @@ export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
       }}
     >
       <CardContent className="flex h-full flex-col px-4">
-        <AuthorRow author={author} createdAt={createdAt} />
+        <AuthorRow author={author} createdAt={createdAt} verified={verified} />
         <PostBodyText
           text={post.getText()}
           expanded={expanded}
@@ -93,7 +111,7 @@ export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 gap-1.5 px-2 text-muted-foreground"
+              className="h-8 gap-1.5 px-2 text-muted-foreground transition-colors hover:text-sky-500"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpen?.(post)

@@ -14,15 +14,19 @@ type PostThreadProps = {
   post: Post
   onBack: () => void
   onLike: (post: Post) => void
+  /** True when this handle has more than 3 posts in the feed. */
+  isVerified?: (handle: string) => boolean
   className?: string
 }
 
 function CommentRow({
   comment,
   replyHandle,
+  verified = false,
 }: {
   comment: Comment
   replyHandle: string
+  verified?: boolean
 }) {
   const author = comment.getAuthor()
   const createdAt = comment.getCreatedAt()
@@ -39,10 +43,12 @@ function CommentRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1 text-sm leading-tight">
           <span className="font-semibold text-foreground">{author.displayName}</span>
-          <BadgeCheck
-            className="size-4 shrink-0 fill-sky-500 text-sky-500"
-            aria-label="Verified"
-          />
+          {verified ? (
+            <BadgeCheck
+              className="size-4 shrink-0 fill-sky-500 text-sky-500"
+              aria-label="Verified"
+            />
+          ) : null}
           <span className="text-muted-foreground">@{author.handle}</span>
           <span className="text-muted-foreground">·</span>
           <time className="text-muted-foreground" dateTime={createdAt.toISOString()}>
@@ -60,12 +66,19 @@ function CommentRow({
   )
 }
 
-export function PostThread({ post, onBack, onLike, className }: PostThreadProps) {
+export function PostThread({
+  post,
+  onBack,
+  onLike,
+  isVerified = () => false,
+  className,
+}: PostThreadProps) {
   const author = post.getAuthor()
   const createdAt = post.getCreatedAt()
   const comments = post.getComments()
   const initials = author.displayName.slice(0, 2).toUpperCase()
   const likeCount = post.getLikeCount()
+  const verified = isVerified(author.handle)
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
@@ -100,10 +113,12 @@ export function PostThread({ post, onBack, onLike, className }: PostThreadProps)
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-1 text-sm leading-tight">
                 <span className="font-semibold text-foreground">{author.displayName}</span>
-                <BadgeCheck
-                  className="size-4 shrink-0 fill-sky-500 text-sky-500"
-                  aria-label="Verified"
-                />
+                {verified ? (
+                  <BadgeCheck
+                    className="size-4 shrink-0 fill-sky-500 text-sky-500"
+                    aria-label="Verified"
+                  />
+                ) : null}
               </div>
               <p className="text-sm text-muted-foreground">@{author.handle}</p>
             </div>
@@ -128,7 +143,7 @@ export function PostThread({ post, onBack, onLike, className }: PostThreadProps)
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5 px-2 text-muted-foreground"
+                className="h-8 gap-1.5 px-2 text-muted-foreground transition-colors hover:text-sky-500"
                 aria-label={`${comments.length} comments`}
               >
                 <MessageCircle className="size-4" />
@@ -165,6 +180,7 @@ export function PostThread({ post, onBack, onLike, className }: PostThreadProps)
               key={comment.id}
               comment={comment}
               replyHandle={author.handle}
+              verified={isVerified(comment.getAuthor().handle)}
             />
           ))}
           {comments.length === 0 ? (

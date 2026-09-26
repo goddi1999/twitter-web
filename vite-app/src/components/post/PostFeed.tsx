@@ -47,6 +47,16 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
   const openPost = posts.find((post) => post.id === openPostId) ?? null
   const isFiltering = query.trim().length > 0 || groupPostId !== null
 
+  const postCountByHandle = new Map<string, number>()
+  for (const post of posts) {
+    const handle = post.getAuthor().handle
+    postCountByHandle.set(handle, (postCountByHandle.get(handle) ?? 0) + 1)
+  }
+
+  function isVerified(handle: string): boolean {
+    return (postCountByHandle.get(handle) ?? 0) > 3
+  }
+
   function bumpPosts() {
     setPosts((current) => [...current])
   }
@@ -117,6 +127,7 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
             post={post}
             onOpen={handleOpen}
             onLike={handleLike}
+            verified={isVerified(post.getAuthor().handle)}
           />
         ))}
       </div>
@@ -154,6 +165,7 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
               post={openPost}
               onBack={() => setOpenPostId(null)}
               onLike={handleLike}
+              isVerified={isVerified}
               className="min-h-0 flex-1"
             />
           ) : null}
