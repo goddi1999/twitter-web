@@ -249,7 +249,12 @@ export function PulseHeart({
     else if (rootRef.current) rootRef.current.dataset.instant = ''
   }
 
-  const paths = typeof icon === 'string' ? ICONS[icon] ?? ICONS.heart : null
+  const paths: readonly IconPath[] | null =
+    typeof icon === 'string' && icon in ICONS
+      ? ICONS[icon as PulseHeartIcon]
+      : typeof icon === 'string'
+        ? ICONS.heart
+        : null
   const text = format(shown.count)
   const cells: Cell[] = roll
     ? roll.at === -1
@@ -294,7 +299,7 @@ export function PulseHeart({
           {paths ? (
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <g ref={glyphRef}>
-                {paths.map((p, i) => (
+                {paths.map((p: IconPath, i: number) => (
                   <path key={i} d={p.d} vectorEffect="non-scaling-stroke" />
                 ))}
               </g>

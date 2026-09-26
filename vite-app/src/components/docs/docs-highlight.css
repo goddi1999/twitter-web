@@ -1,0 +1,39 @@
+/* Minimal dark highlight theme — 5 token colors only (java / bash / curl). */
+.docs-code-block .hljs {
+  color: #e4e4e7;
+  background: transparent;
+}
+
+.docs-code-block .hljs-keyword,
+.docs-code-block .hljs-selector-tag,
+.docs-code-block .hljs-built_in {
+  color: #7dd3fc;
+}
+
+.docs-code-block .hljs-string,
+.docs-code-block .hljs-attr,
+.docs-code-block .hljs-attribute {
+  color: #fdba74;
+}
+
+.docs-code-block .hljs-comment,
+.docs-code-block .hljs-quote {
+  color: #71717a;
+  font-style: italic;
+}
+
+.docs-code-block .hljs-number,
+.docs-code-block .hljs-literal,
+.docs-code-block .hljs-type,
+.docs-code-block .hljs-title,
+.docs-code-block .hljs-title.function_,
+.docs-code-block .hljs-name {
+  color: #a1a1aa;
+}
+
+.docs-code-block .hljs-meta,
+.docs-code-block .hljs-params,
+.docs-code-block .hljs-variable,
+.docs-code-block .hljs-template-variable {
+  color: #d4d4d8;
+}

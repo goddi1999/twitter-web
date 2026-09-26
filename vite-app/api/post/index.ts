@@ -18,10 +18,11 @@ type PublishBody = {
  * (create, like, add/remove comment). We only store — we never overwrite a previous
  * publish. Supabase will replace this log later.
  *
- * Do **not** send `displayName`, `handle`, or `avatarUrl` — the server picks a random
- * `@wq-org/avatars` memoji and uses its `name` (+ derived handle + CDN url).
+ * Optional `avatarId` (e.g. `avatar_female_german_01`) or `author: { id }` selects a
+ * `@wq-org/avatars` memoji; the server resolves name → displayName + handle + CDN url.
+ * Do **not** send `displayName`, `handle`, or `avatarUrl`.
  *
- * Body: { "post": { id, text, likeCount, comments, createdAt? } }
+ * Body: { "post": { id, text, likeCount, comments, createdAt?, avatarId? } }
  * `post.id` is required so publishes can be grouped later.
  */
 export async function POST(request: Request) {

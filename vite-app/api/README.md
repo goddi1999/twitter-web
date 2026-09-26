@@ -11,7 +11,7 @@ HTTP handlers under `/api` **list** posts and **append** full post publishes. Sh
 1. **`post.id` is required** — the client always sends a stable id so we can group publishes of the same post.
 2. **Full document every time** — after create / like / add or remove comment, `POST /api/post` with the complete `post` (same `id`, updated `likeCount` / `comments`).
 3. **Append only — never overwrite** — each request is a new log entry. Two publishes with the same `id` = two rows; the **newest** is the current snapshot.
-4. **Never send author identity** — omit `displayName` / `handle` / `avatarUrl`. Server assigns a random `@wq-org/avatars` memoji; same `post.id` / `comment.id` reuses that author.
+4. **Author from avatar id** — send optional `avatarId` (e.g. `avatar_female_german_01`) or `author: { id }`. Server resolves `@wq-org/avatars` name → displayName + handle + CDN url. Omit it for a random memoji. Never send `displayName` / `handle` / `avatarUrl`. Same `post.id` / `comment.id` reuses that author.
 
 ### Grouping (same `post.id` twice)
 
@@ -71,7 +71,7 @@ curl -s http://localhost:3000/api/posts
 
 ### Publish a post (append)
 
-**`id` is required.** Do not send author fields:
+**`id` is required.** Optional `avatarId` picks a memoji; omit author display fields:
 
 ```bash
 curl -s -X POST http://localhost:3000/api/post \
@@ -81,10 +81,13 @@ curl -s -X POST http://localhost:3000/api/post \
       "id": "11111111-1111-1111-1111-111111111111",
       "text": "Hallo Hochschule Reutlingen!",
       "likeCount": 0,
-      "comments": []
+      "comments": [],
+      "avatarId": "avatar_female_german_01"
     }
   }'
 ```
+
+Without `avatarId`, the server assigns a random memoji.
 
 Always **201** — a new log entry was appended.
 
@@ -152,14 +155,14 @@ GET: posts = latest per id | publishes = full log
 | Runtime | each `api/**/*.ts` `config` | `edge` |
 | Region | same | `fra1` |
 | Max text / comment length | `lib/posts.ts` `MAX_TEXT_LENGTH` | `280` |
-| Author | `randomAuthor()` | from `@wq-org/avatars` (never from client) |
+| Author | `resolveAuthor()` | `@wq-org/avatars` via optional `avatarId`, else random |
 | Storage | `lib/store.ts` | append-only log, group by `id` (→ Supabase later) |
 
 ## Design decisions
 
 - **Required `post.id`**: client owns the stable key for grouping / later Supabase rows.
 - **Append + group**: history stays in the log; feed uses latest-per-id.
-- **Server-only author**: ignored from client; stable across republishes of the same id.
+- **Server-resolved author**: optional `avatarId` / `author.id`; never trust client displayName / handle / avatarUrl. Stable across republishes of the same id.
 - **German validation messages**: match `vercel_func.md`.
 
 ## Known limitations

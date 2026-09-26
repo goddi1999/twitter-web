@@ -1,4 +1,9 @@
-import { getRandomAvatar, withImageUrl } from '@wq-org/avatars'
+import {
+  getAvatarUrl,
+  getRandomAvatar,
+  withImageUrl,
+  type MemojiWithImageUrl,
+} from '@wq-org/avatars'
 
 import {
   appendPublish,
@@ -9,7 +14,7 @@ import {
 
 export const MAX_TEXT_LENGTH = 280
 
-/** Stored / response author — fully server-assigned from @wq-org/avatars. */
+/** Stored / response author — resolved from @wq-org/avatars (by id or random). */
 export type Author = {
   displayName: string
   handle: string
@@ -32,9 +37,7 @@ export type PostDto = {
   createdAt: string
 }
 
-/** Pick a random memoji and map it to Author (name → displayName + handle). */
-export function randomAuthor(): Author {
-  const avatar = withImageUrl(getRandomAvatar())
+function authorFromMemoji(avatar: MemojiWithImageUrl): Author {
   const handle = avatar.name.toLowerCase().replace(/[^a-z0-9]+/g, '')
   if (!handle) {
     throw new Error(`Could not derive handle from avatar name: ${avatar.name}`)
@@ -44,6 +47,20 @@ export function randomAuthor(): Author {
     handle,
     avatarUrl: avatar.imageUrl,
   }
+}
+
+/** Resolve a memoji id (e.g. `avatar_female_german_01`) to Author. */
+export function authorFromAvatarId(avatarId: string): Author {
+  const avatar = getAvatarUrl(avatarId.trim())
+  if (!avatar) {
+    throw new Error(`avatarId ist ungültig: ${avatarId}`)
+  }
+  return authorFromMemoji(avatar)
+}
+
+/** Pick a random memoji and map it to Author (name → displayName + handle). */
+export function randomAuthor(): Author {
+  return authorFromMemoji(withImageUrl(getRandomAvatar()))
 }
 
 export function assertValidText(text: unknown, label = 'Text'): string {
@@ -58,12 +75,20 @@ export function assertValidText(text: unknown, label = 'Text'): string {
 }
 
 /**
- * Author identity is server-owned. Client must not send displayName / avatarUrl / handle —
- * any `author` field on the request is ignored.
+ * Author identity is server-resolved from @wq-org/avatars.
+ * Client may send optional `avatarId` (e.g. `avatar_female_german_01`);
+ * displayName / handle / avatarUrl from the client are ignored.
  * Reuses the previous author when republishing the same post/comment id.
  */
-export function resolveAuthor(_input: unknown, previous?: Author): Author {
-  return previous ?? randomAuthor()
+export function resolveAuthor(
+  avatarId: unknown,
+  previous?: Author,
+): Author {
+  if (previous) return previous
+  if (typeof avatarId === 'string' && avatarId.trim()) {
+    return authorFromAvatarId(avatarId)
+  }
+  return randomAuthor()
 }
 
 function assertNonNegativeInt(value: unknown, label: string): number {
@@ -71,6 +96,20 @@ function assertNonNegativeInt(value: unknown, label: string): number {
     throw new Error(`${label} muss eine nicht-negative Ganzzahl sein.`)
   }
   return value
+}
+
+function parseOptionalAvatarId(raw: Record<string, unknown>): string | undefined {
+  if (typeof raw.avatarId === 'string' && raw.avatarId.trim()) {
+    return raw.avatarId.trim()
+  }
+  // Allow author: { id: "avatar_female_german_01" } — only the memoji id is read.
+  if (raw.author && typeof raw.author === 'object') {
+    const author = raw.author as Record<string, unknown>
+    if (typeof author.id === 'string' && author.id.trim()) {
+      return author.id.trim()
+    }
+  }
+  return undefined
 }
 
 function parseComment(
@@ -92,13 +131,14 @@ function parseComment(
       ? raw.timestamp.trim()
       : new Date().toISOString()
   const previous = previousById.get(id)
-  const author = resolveAuthor(raw.author, previous?.author)
+  const author = resolveAuthor(parseOptionalAvatarId(raw), previous?.author)
   return { id, text, timestamp, author }
 }
 
 /**
  * Accepts a full post document for a new publish.
- * Client must not send avatarUrl — server assigns random wq-avatars URLs.
+ * Optional `avatarId` (or `author.id`) selects a memoji; otherwise random.
+ * Client must not send displayName / handle / avatarUrl — server resolves them.
  */
 export function parseFullPost(input: unknown, previous?: PostDto | null): PostDto {
   if (!input || typeof input !== 'object') {
@@ -130,7 +170,7 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
       )
     : []
 
-  const author = resolveAuthor(raw.author, existing?.author)
+  const author = resolveAuthor(parseOptionalAvatarId(raw), existing?.author)
   const createdAt =
     typeof raw.createdAt === 'string' && raw.createdAt.trim()
       ? raw.createdAt.trim()

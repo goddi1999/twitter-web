@@ -4,7 +4,7 @@ import { BadgeCheck, MessageCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { PulseHeart } from '@/components/ui/pulse-heart'
+import { PulseHeart } from '@/components/pulse-heart'
 import { cn } from '@/lib/utils'
 
 import { formatRelativeTime } from './format-relative-time'

@@ -12,7 +12,7 @@ export function CreatePostPage({ onPublished }: CreatePostPageProps) {
     <DemoPage
       eyebrow="shared / post"
       title="Create post"
-      description="Compose a post. Author and avatar are assigned by the server (or locally when the API is offline)."
+      description="Compose a post. Tap the avatar to pick a memoji — we resolve the name and handle from its id."
       align="center"
       className="max-w-3xl"
     >

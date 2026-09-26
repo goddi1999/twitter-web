@@ -3,7 +3,7 @@ import { ArrowLeft, BadgeCheck, MessageCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BlurredScrollArea } from '@/components/ui/blurred-scroll-area'
 import { Button } from '@/components/ui/button'
-import { PulseHeart } from '@/components/ui/pulse-heart'
+import { PulseHeart } from '@/components/pulse-heart'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 

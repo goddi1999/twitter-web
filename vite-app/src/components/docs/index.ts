@@ -1,1 +1,6 @@
 export { DocsPage } from './page'
+export { DocsCodeBlock } from './code-block'
+export { DocsMarkdown } from './markdown'
+export { AvatarCatalogTable } from './avatar-table'
+export { DocsRequestTabs, REQUEST_TABS } from './request-tabs'
+export type { RequestTabId } from './request-tabs'
