@@ -21,7 +21,8 @@ type PublishBody = {
  * Do **not** send `displayName`, `handle`, or `avatarUrl` — the server picks a random
  * `@wq-org/avatars` memoji and uses its `name` (+ derived handle + CDN url).
  *
- * Body: { "post": { id?, text, likeCount, comments, createdAt? } }
+ * Body: { "post": { id, text, likeCount, comments, createdAt? } }
+ * `post.id` is required so publishes can be grouped later.
  */
 export async function POST(request: Request) {
   try {

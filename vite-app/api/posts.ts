@@ -1,16 +1,23 @@
 import { error, json, options } from '../lib/http'
-import { listPosts } from '../lib/posts'
+import { listPosts, listPublishes } from '../lib/posts'
 
 export const config = {
   runtime: 'edge',
   regions: ['fra1'],
 }
 
-/** GET /api/posts — list recent posts (feed for the Vite UI). */
+/**
+ * GET /api/posts
+ *
+ * - `posts`: grouped by `post.id` → latest publish only (feed)
+ * - `publishes`: full append log (every publish, including older versions)
+ */
 export async function GET() {
   try {
-    const posts = await listPosts()
-    return json({ posts })
+    return json({
+      posts: listPosts(),
+      publishes: listPublishes(),
+    })
   } catch (err) {
     console.error('GET /api/posts failed', err)
     return error(err instanceof Error ? err.message : 'Internal error', 500)

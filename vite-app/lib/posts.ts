@@ -1,6 +1,6 @@
 import { getRandomAvatar, withImageUrl } from '@wq-org/avatars'
 
-import { appendPublish, getAllPublishes, getLatestPublish } from './store'
+import { appendPublish, getAllPublishes, getLatestPostsById, getLatestPublish } from './store'
 
 export const MAX_TEXT_LENGTH = 280
 
@@ -109,10 +109,10 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
     throw new Error('comments muss ein Array sein.')
   }
 
-  const id =
-    typeof raw.id === 'string' && raw.id.trim()
-      ? raw.id.trim()
-      : crypto.randomUUID()
+  if (typeof raw.id !== 'string' || !raw.id.trim()) {
+    throw new Error('post.id ist erforderlich.')
+  }
+  const id = raw.id.trim()
 
   const existing = previous ?? getLatestPublish(id) ?? null
   const previousComments = new Map(
@@ -134,8 +134,13 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
   return { id, text, likeCount, comments, author, createdAt }
 }
 
-/** Newest publishes first (append log, not deduped). */
+/** Feed: latest snapshot per `post.id`, newest publish first. */
 export function listPosts(): PostDto[] {
+  return getLatestPostsById()
+}
+
+/** Raw append log (every publish), newest first — for debugging / history. */
+export function listPublishes(): PostDto[] {
   return getAllPublishes()
 }
 
