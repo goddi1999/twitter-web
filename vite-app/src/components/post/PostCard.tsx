@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { BadgeCheck, Heart, MessageCircle } from 'lucide-react'
+import { BadgeCheck, MessageCircle } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { PulseHeart } from '@/components/ui/pulse-heart'
 import { cn } from '@/lib/utils'
 
 import { formatRelativeTime } from './format-relative-time'
@@ -102,20 +103,25 @@ export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
               <MessageCircle className="size-4" />
               <span>{commentCount}</span>
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 px-2 text-muted-foreground"
-              onClick={(event) => {
-                event.stopPropagation()
-                onLike?.(post)
-              }}
-              aria-label={`Like, ${likeCount} likes`}
+            <div
+              className="flex items-center"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
             >
-              <Heart className="size-4" />
-              <span>{likeCount}</span>
-            </Button>
+              <PulseHeart
+                count={likeCount}
+                size={18}
+                likedColor="#ef4444"
+                idleColor="oklch(0.55 0 0)"
+                pillColor="transparent"
+                textColor="currentColor"
+                className="text-muted-foreground"
+                label="Like"
+                onChange={(liked) => {
+                  if (liked) onLike?.(post)
+                }}
+              />
+            </div>
           </div>
           {canExpand ? (
             <Button

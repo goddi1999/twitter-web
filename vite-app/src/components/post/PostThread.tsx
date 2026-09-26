@@ -1,8 +1,9 @@
-import { ArrowLeft, BadgeCheck, Heart, MessageCircle } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, MessageCircle } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BlurredScrollArea } from '@/components/ui/blurred-scroll-area'
 import { Button } from '@/components/ui/button'
+import { PulseHeart } from '@/components/ui/pulse-heart'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 
@@ -133,17 +134,19 @@ export function PostThread({ post, onBack, onLike, className }: PostThreadProps)
                 <MessageCircle className="size-4" />
                 <span>{comments.length}</span>
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-muted-foreground"
-                onClick={() => onLike(post)}
-                aria-label={`Like, ${likeCount} likes`}
-              >
-                <Heart className="size-4" />
-                <span>{likeCount}</span>
-              </Button>
+              <PulseHeart
+                count={likeCount}
+                size={18}
+                likedColor="#ef4444"
+                idleColor="oklch(0.55 0 0)"
+                pillColor="transparent"
+                textColor="currentColor"
+                className="text-muted-foreground"
+                label="Like"
+                onChange={(liked) => {
+                  if (liked) onLike(post)
+                }}
+              />
             </div>
           </div>
         </div>

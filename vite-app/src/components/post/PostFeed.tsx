@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 
 import { createDemoPostBatch, createDemoPosts } from './demo-data'
 import { PostCard } from './PostCard'
+import { PostGroupTabs } from './PostGroupTabs'
 import { PostThread } from './PostThread'
 import type { Post } from './post.model'
 
@@ -32,15 +33,19 @@ function matchesDescription(post: Post, query: string): boolean {
 export function PostFeed({ initialPosts, className }: PostFeedProps) {
   const [posts, setPosts] = useState<Post[]>(() => initialPosts ?? createDemoPosts())
   const [query, setQuery] = useState('')
+  const [groupPostId, setGroupPostId] = useState<string | null>(null)
   const [openPostId, setOpenPostId] = useState<string | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const batchOffsetRef = useRef(initialPosts?.length ?? BATCH_SIZE)
   const loadingRef = useRef(false)
 
-  const filteredPosts = posts.filter((post) => matchesDescription(post, query))
+  const filteredPosts = posts.filter((post) => {
+    if (groupPostId !== null && post.id !== groupPostId) return false
+    return matchesDescription(post, query)
+  })
   const openPost = posts.find((post) => post.id === openPostId) ?? null
-  const isFiltering = query.trim().length > 0
+  const isFiltering = query.trim().length > 0 || groupPostId !== null
 
   function bumpPosts() {
     setPosts((current) => [...current])
@@ -85,7 +90,7 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
 
   return (
     <div className={cn('w-full text-left', className)}>
-      <div className="mx-auto mb-6 w-full max-w-xl">
+      <div className="mx-auto mb-6 w-full max-w-xl space-y-3">
         <FieldInput
           label="Search posts"
           placeholder="Filter by description…"
@@ -94,6 +99,11 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
           type="search"
           autoComplete="off"
           showClearButton
+        />
+        <PostGroupTabs
+          posts={posts}
+          activePostId={groupPostId}
+          onSelect={setGroupPostId}
         />
       </div>
 
@@ -113,7 +123,7 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
 
       {filteredPosts.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          No posts match that description.
+          No posts match that filter.
         </p>
       ) : null}
 
