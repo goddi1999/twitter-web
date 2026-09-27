@@ -4,9 +4,7 @@ import { Menu, RefreshCw } from 'lucide-react'
 import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
-import { ThemeSwitcher } from '@/components/theme-switcher'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
-import { useAccentTheme } from '@/components/use-accent-theme'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -30,8 +28,6 @@ export function App() {
   const [view, setView] = useState<AppView>('home')
   const [feedKey, setFeedKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
-  // Apply accent from themes.ts (`data-accent` → CSS primary tokens)
-  useAccentTheme()
 
   function handleRefresh() {
     setRefreshing(true)
@@ -70,21 +66,16 @@ export function App() {
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
-            <div className="flex min-h-0 flex-1 flex-col">
-              <TreeMenu
-                items={NAV_ITEMS}
-                className="min-h-0 flex-1 justify-start pt-4 pb-4"
-                onSelect={(item) => {
-                  if (item.id === 'home' || item.id === 'create' || item.id === 'docs') {
-                    setView(item.id)
-                  }
-                  setMenuOpen(false)
-                }}
-              />
-              <div className="mt-auto border-t border-border/60 px-4 py-4">
-                <ThemeSwitcher />
-              </div>
-            </div>
+            <TreeMenu
+              items={NAV_ITEMS}
+              className="min-h-0 flex-1 justify-start pt-4 pb-4"
+              onSelect={(item) => {
+                if (item.id === 'home' || item.id === 'create' || item.id === 'docs') {
+                  setView(item.id)
+                }
+                setMenuOpen(false)
+              }}
+            />
           </SheetContent>
         </Sheet>
       </div>
