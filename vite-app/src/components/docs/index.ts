@@ -1,5 +1,7 @@
 export { DocsPage } from './page'
 export { DocsCodeBlock } from './code-block'
+export { DocsCopyButton } from './copy-button'
+export { DocsCopyableLink } from './copyable-link'
 export { DocsMarkdown } from './markdown'
 export { AvatarCatalogTable } from './avatar-table'
 export { DocsRequestTabs, REQUEST_TABS } from './request-tabs'

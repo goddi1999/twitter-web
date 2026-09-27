@@ -1,11 +1,15 @@
 import { DemoPage } from '@/components/demo-page'
 
 import { AvatarCatalogTable } from './avatar-table'
+import { DocsCopyableLink } from './copyable-link'
 import { DocsMarkdown } from './markdown'
 import { DocsRequestTabs, type RequestTabId } from './request-tabs'
 
 /** Official production API base. Local: `npx vercel dev` → http://localhost:3000 */
 const BASE_URL = 'https://twitter-web-inky.vercel.app'
+const LOCAL_URL = 'http://localhost:3000'
+const CLIENT_REPO = 'https://github.com/goddi1999/social-publish-client'
+const AVATARS_REPO = 'https://github.com/wq-org/wq-avatars'
 
 const LIST_SNIPPETS: Record<
   RequestTabId,
@@ -61,7 +65,7 @@ const PUBLISH_SNIPPETS: Record<
 }
 
 dependencies {
-    implementation 'com.github.GITHUB-USER:social-publish-client:1.0.0'
+    implementation 'com.github.goddi1999:social-publish-client:v1.2.0'
 }`,
     },
     {
@@ -167,13 +171,9 @@ EOF`,
   },
 }
 
-const INTRO_MD = `**Official API:** [\`${BASE_URL}\`](${BASE_URL})
+const INTRO_MD = `**Endpoints:** \`GET /api/posts\` · \`POST /api/post\`
 
-**Local:** \`http://localhost:3000\` via \`npx vercel dev\`
-
-**Endpoints:** \`GET /api/posts\` · \`POST /api/post\`
-
-Java is the primary client for the course. curl / Bash are for quick checks.
+Java is the primary client for the course. curl / Bash are for quick checks. Copy any link below.
 `
 
 const LIST_MD = `Returns \`posts\` (latest per \`post.id\` for the feed) and \`publishes\` (full history).
@@ -191,10 +191,12 @@ Kommentar-IDs genauso: weglassen (Bibliothek generiert) oder optional mitsenden.
 
 Für Like / Kommentar: erneut \`publish(postId, …)\` — Server reused den Author.
 
-\`avatarId\` ist komplett optional (Tabelle unten).
+\`avatarId\` ist komplett optional (Tabelle unten). Client: [\`social-publish-client\` v1.2.0](${CLIENT_REPO}).
 `
 
 const AVATARS_MD = `Optional: \`PostPublisher.publish(publishId, text, "avatar_female_german_01", likeCount, comments)\`.
+
+Package: [\`@wq-org/avatars\`](${AVATARS_REPO}) · Repository: [\`wq-org/wq-avatars\`](${AVATARS_REPO}).
 `
 
 export function DocsPage() {
@@ -207,8 +209,35 @@ export function DocsPage() {
       className="max-w-4xl pb-24"
     >
       <div className="w-full space-y-12 text-left">
-        <div className="rounded-xl border border-border/60 bg-card/40 px-4 py-3">
+        <div className="space-y-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3">
           <DocsMarkdown>{INTRO_MD}</DocsMarkdown>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <DocsCopyableLink label="Production API" value={BASE_URL} />
+            <DocsCopyableLink label="Local (vercel dev)" value={LOCAL_URL} />
+            <DocsCopyableLink
+              label="List posts"
+              value={`${BASE_URL}/api/posts`}
+            />
+            <DocsCopyableLink
+              label="Publish post"
+              value={`${BASE_URL}/api/post`}
+            />
+            <DocsCopyableLink
+              label="Java client (JitPack)"
+              value="com.github.goddi1999:social-publish-client:v1.2.0"
+              href={CLIENT_REPO}
+            />
+            <DocsCopyableLink
+              label="Java client repo"
+              value={CLIENT_REPO}
+            />
+            <DocsCopyableLink
+              label="wq-avatars package"
+              value="@wq-org/avatars"
+              href={AVATARS_REPO}
+            />
+            <DocsCopyableLink label="wq-avatars repo" value={AVATARS_REPO} />
+          </div>
         </div>
 
         <section id="list" className="scroll-mt-8 space-y-4">
