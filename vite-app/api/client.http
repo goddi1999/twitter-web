@@ -1,11 +1,12 @@
 ### Variables
 # Local API needs `npx vercel dev` in vite-app (port 3000).
 # `npm run dev` alone (5173) does NOT serve /api → connection rejected / SPA HTML.
-# Prod: Reutlingen VPN required (firewall only allows 134.103.92.135 for /api).
+# Official prod: https://twitter-web-inky.vercel.app (in-app Docs + api/README.md)
+# Prod /api may require Reutlingen VPN (firewall only allows 134.103.92.135).
 @local = http://localhost:3000
 @prod = https://twitter-web-inky.vercel.app
-@baseUrl = {{local}}
-# For production tests: set @baseUrl = {{prod}} and connect VPN first.
+@baseUrl = {{prod}}
+# Local tests: set @baseUrl = {{local}} and run `npx vercel dev`.
 
 @postId = b4c13d40-011e-4367-aadd-35bf758412f2
 @commentId1 = b44da884-8a1b-4bee-942a-1027bc7e2b2e

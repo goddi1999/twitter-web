@@ -4,8 +4,8 @@ import { AvatarCatalogTable } from './avatar-table'
 import { DocsMarkdown } from './markdown'
 import { DocsRequestTabs, type RequestTabId } from './request-tabs'
 
-/** Replace with your Vercel URL after deploy (or use local vercel dev). */
-const BASE_URL = 'https://DEIN-PROJEKT.vercel.app'
+/** Official production API base. Local: `npx vercel dev` → http://localhost:3000 */
+const BASE_URL = 'https://twitter-web-inky.vercel.app'
 
 const LIST_SNIPPETS: Record<
   RequestTabId,
@@ -24,6 +24,7 @@ String baseUrl = "${BASE_URL}"; // local: http://localhost:3000
 HttpClient client = HttpClient.newHttpClient();
 HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + "/api/posts"))
+        .header("Accept", "application/json")
         .GET()
         .build();
 
@@ -33,14 +34,15 @@ System.out.println(response.body());`,
   curl: {
     language: 'curl',
     title: 'GET /api/posts — curl',
-    code: `curl -s ${BASE_URL}/api/posts`,
+    code: `curl -sS ${BASE_URL}/api/posts \\
+  -H 'Accept: application/json'`,
   },
   bash: {
     language: 'bash',
     title: 'GET /api/posts — Bash',
     code: `#!/usr/bin/env bash
 BASE_URL="${BASE_URL}"  # local: http://localhost:3000
-curl -sS "$BASE_URL/api/posts"`,
+curl -sS "$BASE_URL/api/posts" -H 'Accept: application/json'`,
   },
 }
 
@@ -113,6 +115,7 @@ HttpClient client = HttpClient.newHttpClient();
 HttpRequest request = HttpRequest.newBuilder()
         .uri(URI.create(baseUrl + "/api/post"))
         .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(body))
         .build();
 
@@ -123,8 +126,9 @@ System.out.println(response.statusCode() + " " + response.body());`,
   curl: {
     language: 'curl',
     title: 'POST /api/post — curl',
-    code: `curl -s -X POST ${BASE_URL}/api/post \\
+    code: `curl -sS -X POST ${BASE_URL}/api/post \\
   -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json' \\
   -d '{
     "post": {
       "id": "11111111-1111-1111-1111-111111111111",
@@ -142,6 +146,7 @@ System.out.println(response.statusCode() + " " + response.body());`,
 BASE_URL="${BASE_URL}"  # local: http://localhost:3000
 curl -sS -X POST "$BASE_URL/api/post" \\
   -H 'Content-Type: application/json' \\
+  -H 'Accept: application/json' \\
   -d @- <<'EOF'
 {
   "post": {
@@ -155,9 +160,8 @@ curl -sS -X POST "$BASE_URL/api/post" \\
         "timestamp": "2026-09-26T12:00:00.000Z"
       },
       {
-        "id": "33333333-3333-3333-3333-333333333333",
-        "text": "Stimmt, sehr hilfreich.",
-        "timestamp": "2026-09-26T12:05:00.000Z"
+        "text": "Ohne id — Server vergibt UUID",
+        "timestamp": "2026-09-26T12:05:00"
       }
     ],
     "createdAt": "2026-09-26T11:00:00.000Z",
@@ -168,26 +172,42 @@ EOF`,
   },
 }
 
-const INTRO_MD = `**Local:** \`http://localhost:3000\` via \`npx vercel dev\`.
+const INTRO_MD = `**Official API:** [\`${BASE_URL}\`](${BASE_URL})
 
-**Deployed:** \`https://DEIN-PROJEKT.vercel.app\` — replace \`DEIN-PROJEKT\` with your Vercel project name.
+**Local:** \`http://localhost:3000\` via \`npx vercel dev\` (plain \`npm run dev\` does **not** serve \`/api\`).
 
-**Endpoints:** \`GET /api/posts\`, \`POST /api/post\`  
-Example: \`POST https://DEIN-PROJEKT.vercel.app/api/post\`
+**Endpoints**
+
+- \`GET /api/posts\` — feed + publish history
+- \`POST /api/post\` — append a full post document
+
+**Storage:** each publish is a row in Supabase table \`publishes\` (\`post\` jsonb). Same \`post.id\` again = new row; feed uses the **newest** snapshot.
+
+**Auth:** none. CORS allows any origin. Production \`/api\` may require Reutlingen VPN (firewall).
 
 Java is the primary client. Use **curl** or **Bash** from a terminal.
 `
 
-const LIST_MD = `Returns the latest snapshot per \`post.id\` plus the full append-only publish history.
+const LIST_MD = `Returns JSON:
+
+\`\`\`json
+{
+  "posts": [ /* latest snapshot per post.id */ ],
+  "publishes": [ /* full append log, newest first */ ]
+}
+\`\`\`
+
+Use \`posts\` for the Home feed. Use \`publishes\` for debugging / history.
 `
 
-const PUBLISH_MD = `Always send a stable \`post.id\`.
+const PUBLISH_MD = `Always send a stable \`post.id\` (UUID recommended). Response **201** with \`{ "post": { … } }\`.
 
-1. **Dependency** — add the Java client (see tab).
-2. **Publish** — map your model and call \`PostPublisher.publish(...)\`.
-3. **With avatar** — send optional \`avatarId\` (e.g. \`avatar_female_german_01\`). The server resolves display name, handle, and CDN image from \`@wq-org/avatars\`. Never send \`displayName\`, \`handle\`, or \`avatarUrl\`.
+1. **Dependency** — add the Java client (see tab), or call HTTP directly.
+2. **Publish** — map your model and \`POST\` the full document (text, likeCount, comments).
+3. **With avatar** — optional \`avatarId\` (e.g. \`avatar_female_german_01\`). The server resolves display name, handle, and CDN image from \`@wq-org/avatars\`. Never send \`displayName\`, \`handle\`, or \`avatarUrl\`.
+4. **Comments** — \`id\` and \`timestamp\` are optional (ISO-ish strings). Server fills missing ids/timestamps and assigns comment authors.
 
-Copy an id from the avatar table below.
+Copy an avatar id from the table below.
 `
 
 const AVATARS_MD = `Pass the copied id as \`avatarId\` (or \`author: { "id": "…" }\`). Example: \`avatar_female_german_01\`.
@@ -198,7 +218,7 @@ export function DocsPage() {
     <DemoPage
       eyebrow="docs"
       title="API docs"
-      description="Publish posts to the Vercel Edge function, pick a memoji by id, and wire a Java client."
+      description="Official production API for listing and publishing posts. Node functions on Vercel, durable Supabase storage, memoji authors by avatarId."
       align="start"
       className="max-w-4xl pb-24"
     >

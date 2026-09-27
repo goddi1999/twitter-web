@@ -1,17 +1,30 @@
 # API
 
-Vercel Edge functions for a Post / Comment / Like feed used by the Vite UI.
+Vercel **Node** functions for a Post / Comment / Like feed used by the Vite UI.
+
+**Official production base:** https://twitter-web-inky.vercel.app  
+**In-app docs:** open **Docs** in the app menu (same site).
 
 ## What it does
 
-HTTP handlers under `/api` **list** posts and **append** full post publishes. Shared validation and DTOs live in `../lib`. Persistence is Supabase table `publishes` (`post` jsonb, append-only). Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
+HTTP handlers under `/api` **list** posts and **append** full post publishes. Shared validation and DTOs live in `../lib`. Persistence is Supabase table `publishes` (`post` jsonb, append-only).
+
+### Env (Vercel project `vite-app`)
+
+| Variable | Purpose |
+| --- | --- |
+| `SUPABASE_URL` | Project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | Anon / publishable key for select + insert |
+
+Redeploy after changing env. Local: `npx vercel env pull .env.local --yes` then `npx vercel dev`.
 
 ### Rules
 
-1. **`post.id` is required** — the client always sends a stable id so we can group publishes of the same post.
-2. **Full document every time** — after create / like / add or remove comment, `POST /api/post` with the complete `post` (same `id`, updated `likeCount` / `comments`).
-3. **Append only — never overwrite** — each request is a new log entry. Two publishes with the same `id` = two rows; the **newest** is the current snapshot.
-4. **Author from avatar id** — send optional `avatarId` (e.g. `avatar_female_german_01`) or `author: { id }`. Server resolves `@wq-org/avatars` name → displayName + handle + CDN url. Omit it for a random memoji. Never send `displayName` / `handle` / `avatarUrl`. Same `post.id` / `comment.id` reuses that author.
+1. **`post.id` is required** — stable id so publishes of the same post can be grouped.
+2. **Full document every time** — after create / like / add or remove comment, `POST /api/post` with the complete `post`.
+3. **Append only — never overwrite** — each request is a new row. Newest row for an id = current snapshot.
+4. **Author from avatar id** — optional `avatarId` or `author: { id }`. Server resolves `@wq-org/avatars`. Never send `displayName` / `handle` / `avatarUrl`.
+5. **Comment `id` / `timestamp` optional** — timestamps are flexible ISO-ish strings; server fills gaps.
 
 ### Grouping (same `post.id` twice)
 
@@ -22,60 +35,41 @@ Log (append):
   3) id=xyz  likeCount=0  comments=[]
 
 GET /api/posts →
-  posts:      [ snapshot of abc (#2), snapshot of xyz (#3) ]  // grouped for feed
-  publishes:  [ #3, #2, #1 ]                                  // full history
+  posts:      [ snapshot of abc (#2), snapshot of xyz (#3) ]
+  publishes:  [ #3, #2, #1 ]
 ```
 
 No like / comment mutation routes. The app owns that logic; we only store publishes.
 
 ## Setup
 
-**Prerequisites:** Node.js, npm, and the [Vercel CLI](https://vercel.com/docs/cli) (needed to serve `api/` locally; `vite` alone does not).
-
 ```bash
 cd vite-app
 npm install
-npx vercel link   # once per machine / project
+npx vercel link
+npx vercel env pull .env.local --yes
 npx vercel dev
 ```
 
-Typecheck the API + lib sources (via `tsconfig.api.json`):
-
 ```bash
-npm run typecheck
+npm run typecheck   # tsc -b
 ```
 
-Deploy with the Vite app (see `../vercel.json`: framework `vite`, `outputDirectory` `dist`, SPA rewrite that leaves `/api/*` alone).
-
-**Vercel Root Directory must be `vite-app`** (the folder that contains `package.json`). If Root Directory is the repo root, install is skipped and the build fails with `vite: command not found`.
+**Vercel Root Directory must be `vite-app`.**
 
 ## Usage
 
-With `vercel dev` running, base URL is typically `http://localhost:3000`.
-
-### List posts (grouped) + publish history
+### Production
 
 ```bash
-curl -s http://localhost:3000/api/posts
+curl -sS https://twitter-web-inky.vercel.app/api/posts \
+  -H 'Accept: application/json'
 ```
-
-```json
-{
-  "posts": [],
-  "publishes": []
-}
-```
-
-- **`posts`**: one entry per `post.id` (latest publish) — use this for the feed  
-- **`publishes`**: every append, newest first — history / debugging  
-
-### Publish a post (append)
-
-**`id` is required.** Optional `avatarId` picks a memoji; omit author display fields:
 
 ```bash
-curl -s -X POST http://localhost:3000/api/post \
+curl -sS -X POST https://twitter-web-inky.vercel.app/api/post \
   -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
   -d '{
     "post": {
       "id": "11111111-1111-1111-1111-111111111111",
@@ -87,95 +81,59 @@ curl -s -X POST http://localhost:3000/api/post \
   }'
 ```
 
-Without `avatarId`, the server assigns a random memoji.
+### Local
 
-Always **201** — a new log entry was appended.
+Base URL `http://localhost:3000` with the same paths (`vercel dev`).
 
-After a like or comment, publish again with the **same** `id` and the updated document:
+- **`posts`**: one entry per `post.id` (latest) — feed  
+- **`publishes`**: every append, newest first  
 
-```bash
-curl -s -X POST http://localhost:3000/api/post \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "post": {
-      "id": "11111111-1111-1111-1111-111111111111",
-      "text": "Hallo Hochschule Reutlingen!",
-      "likeCount": 1,
-      "comments": [
-        {
-          "id": "22222222-2222-2222-2222-222222222222",
-          "text": "Cooler Beitrag!",
-          "timestamp": "2026-09-26T12:00:00.000Z"
-        }
-      ],
-      "createdAt": "2026-09-26T11:00:00.000Z"
-    }
-  }'
-```
+Always **201** on successful publish. Missing `post.id` → **400**.
 
-Optional on the client: `createdAt`, comment `id` / `timestamp` (server fills if omitted). Comment authors are server-assigned (reused when the same comment `id` was published before).
+HTTP examples: `api/client.http`.
 
-Missing `post.id` → **400** `post.id ist erforderlich.`
-
-All routes also answer `OPTIONS` with CORS headers (`Access-Control-Allow-Origin: *`).
-
-## Output layout
+## Layout
 
 ```text
 vite-app/
 ├── api/
-│   ├── posts.ts              # GET  /api/posts  (posts + publishes)
-│   └── post/
-│       └── index.ts          # POST /api/post  (append; id required)
+│   ├── posts.ts              # GET  /api/posts
+│   ├── post/index.ts         # POST /api/post
+│   ├── client.http
+│   └── README.md
 ├── lib/
 │   ├── http.ts
 │   ├── posts.ts
-│   └── store.ts              # append-only log + group-by-id
-├── tsconfig.api.json
+│   ├── store.ts              # Supabase publishes
+│   └── supabase.ts
 └── vercel.json
 ```
 
-## Pipeline / overview
+## Pipeline
 
 ```text
-Client app
-  │  always sends post.id
-  │  local like/comment → POST full post again (same id)
+Client / curl / Java
+  │  POST full post (stable id)
   ▼
-Vercel Edge (fra1)
-  └─ append log  →  later: Supabase
+Vercel Function (nodejs, fra1)
+  └─ insert into Supabase publishes
   ▼
-GET: posts = latest per id | publishes = full log
+GET /api/posts → posts = latest per id | publishes = full log
+Home UI fetches GET on load (+ Refresh)
 ```
 
 ## Configuration
 
-| Setting | Where | Value |
-| --- | --- | --- |
-| Runtime | each `api/**/*.ts` `config` | `nodejs` |
-| Region | same | `fra1` |
-| Max text / comment length | `lib/posts.ts` `MAX_TEXT_LENGTH` | `280` |
-| Author | `resolveAuthor()` | `@wq-org/avatars` via optional `avatarId`, else random |
-| Storage | `lib/store.ts` → Supabase `publishes` | append-only jsonb, group by `post.id` |
-| Env | Vercel / `.env.local` | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` |
-
-## Design decisions
-
-- **Required `post.id`**: client owns the stable key for grouping / later Supabase rows.
-- **Append + group**: history stays in the log; feed uses latest-per-id.
-- **Server-resolved author**: optional `avatarId` / `author.id`; never trust client displayName / handle / avatarUrl. Stable across republishes of the same id.
-- **German validation messages**: match `vercel_func.md`.
+| Setting | Value |
+| --- | --- |
+| Runtime | `nodejs` |
+| Region | `fra1` |
+| Max text | 280 |
+| Storage | Supabase `publishes` |
+| Env | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` |
 
 ## Known limitations
 
-- Publishable (anon) key needs table grants / RLS policies that allow `select` + `insert` on `publishes`.
-- No auth; CORS allows any origin.
-- `npm run dev` (Vite) does not serve these functions — use `vercel dev`.
-
-## Development
-
-```bash
-npm run typecheck
-```
-
-Shared logic belongs in `lib/`. Keep `export const config = { runtime: 'nodejs', regions: ['fra1'] }` on routes.
+- Publishable key needs RLS/grants allowing `select` + `insert` on `publishes`.
+- No auth; CORS `*`. Production `/api` may be VPN-restricted.
+- `npm run dev` does not serve functions — use `vercel dev`.
