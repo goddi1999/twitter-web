@@ -1,29 +1,47 @@
 import type { PostDto } from './posts.js'
+import { getSupabase } from './supabase.js'
 
-/**
- * Append-only publish log (Edge-safe, no DB).
- * Never overwrites — each client publish is a new entry.
- * Group by `post.id`: the newest entry for an id is the current snapshot.
- * Resets on cold start; will move to Supabase later.
- */
-const publishes: PostDto[] = []
+type PublishRow = {
+  id: string
+  post: PostDto
+  created_at: string
+}
+
+function asPostDto(value: unknown): PostDto | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  if (typeof raw.id !== 'string' || typeof raw.text !== 'string') return null
+  return value as PostDto
+}
 
 /** Full append log, newest first. */
-export function getAllPublishes(): PostDto[] {
-  return [...publishes].reverse()
+export async function getAllPublishes(): Promise<PostDto[]> {
+  const { data, error } = await getSupabase()
+    .from('publishes')
+    .select('post, created_at')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Supabase lesen fehlgeschlagen: ${error.message}`)
+  }
+
+  const rows = (data ?? []) as PublishRow[]
+  return rows
+    .map((row) => asPostDto(row.post))
+    .filter((post): post is PostDto => post !== null)
 }
 
 /**
  * One row per `post.id` — the latest publish for that id.
  * Order: most recently published post first.
  */
-export function getLatestPostsById(): PostDto[] {
+export async function getLatestPostsById(): Promise<PostDto[]> {
+  const publishes = await getAllPublishes()
   const seen = new Set<string>()
   const latest: PostDto[] = []
 
-  for (let i = publishes.length - 1; i >= 0; i -= 1) {
-    const entry = publishes[i]
-    if (!entry || seen.has(entry.id)) continue
+  for (const entry of publishes) {
+    if (seen.has(entry.id)) continue
     seen.add(entry.id)
     latest.push(entry)
   }
@@ -32,17 +50,31 @@ export function getLatestPostsById(): PostDto[] {
 }
 
 /** Latest publish for a logical post id, or undefined. */
-export function getLatestPublish(postId: string): PostDto | undefined {
-  for (let i = publishes.length - 1; i >= 0; i -= 1) {
-    if (publishes[i]?.id === postId) {
-      return publishes[i]
-    }
+export async function getLatestPublish(
+  postId: string,
+): Promise<PostDto | undefined> {
+  const { data, error } = await getSupabase()
+    .from('publishes')
+    .select('post, created_at')
+    .eq('post->>id', postId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error) {
+    throw new Error(`Supabase lesen fehlgeschlagen: ${error.message}`)
   }
-  return undefined
+
+  const row = (data?.[0] ?? null) as PublishRow | null
+  return row ? (asPostDto(row.post) ?? undefined) : undefined
 }
 
 /** Append only — never replaces an existing entry. */
-export function appendPublish(post: PostDto): PostDto {
-  publishes.push(post)
+export async function appendPublish(post: PostDto): Promise<PostDto> {
+  const { error } = await getSupabase().from('publishes').insert({ post })
+
+  if (error) {
+    throw new Error(`Supabase schreiben fehlgeschlagen: ${error.message}`)
+  }
+
   return post
 }

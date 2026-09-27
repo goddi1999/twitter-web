@@ -2,8 +2,9 @@ import { error, json, options } from '../lib/http.js'
 import { listPosts, listPublishes } from '../lib/posts.js'
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
   regions: ['fra1'],
+  maxDuration: 30,
 }
 
 /**
@@ -14,10 +15,8 @@ export const config = {
  */
 export async function GET() {
   try {
-    return json({
-      posts: listPosts(),
-      publishes: listPublishes(),
-    })
+    const [posts, publishes] = await Promise.all([listPosts(), listPublishes()])
+    return json({ posts, publishes })
   } catch (err) {
     console.error('GET /api/posts failed', err)
     return error(err instanceof Error ? err.message : 'Internal error', 500)

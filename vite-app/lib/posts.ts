@@ -140,7 +140,10 @@ function parseComment(
  * Optional `avatarId` (or `author.id`) selects a memoji; otherwise random.
  * Client must not send displayName / handle / avatarUrl — server resolves them.
  */
-export function parseFullPost(input: unknown, previous?: PostDto | null): PostDto {
+export async function parseFullPost(
+  input: unknown,
+  previous?: PostDto | null,
+): Promise<PostDto> {
   if (!input || typeof input !== 'object') {
     throw new Error('post ist erforderlich.')
   }
@@ -159,7 +162,7 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
   }
   const id = raw.id.trim()
 
-  const existing = previous ?? getLatestPublish(id) ?? null
+  const existing = previous ?? (await getLatestPublish(id)) ?? null
   const previousComments = new Map<string, CommentDto>(
     (existing?.comments ?? []).map((comment) => [comment.id, comment]),
   )
@@ -180,23 +183,23 @@ export function parseFullPost(input: unknown, previous?: PostDto | null): PostDt
 }
 
 /** Feed: latest snapshot per `post.id`, newest publish first. */
-export function listPosts(): PostDto[] {
+export async function listPosts(): Promise<PostDto[]> {
   return getLatestPostsById()
 }
 
 /** Raw append log (every publish), newest first — for debugging / history. */
-export function listPublishes(): PostDto[] {
+export async function listPublishes(): Promise<PostDto[]> {
   return getAllPublishes()
 }
 
-export function getPost(postId: string): PostDto | null {
-  return getLatestPublish(postId) ?? null
+export async function getPost(postId: string): Promise<PostDto | null> {
+  return (await getLatestPublish(postId)) ?? null
 }
 
 /**
  * Append a publish. Never overwrites prior entries.
  * Likes / comment changes from the app are just another publish of the full post.
  */
-export function publishPost(post: PostDto): PostDto {
+export async function publishPost(post: PostDto): Promise<PostDto> {
   return appendPublish(post)
 }

@@ -25,8 +25,13 @@ export class Comment {
   private readonly createdAt: Date
   private readonly author: Author
 
-  constructor(text: string, author: Author, createdAt: Date = new Date()) {
-    this.id = createId('comment')
+  constructor(
+    text: string,
+    author: Author,
+    createdAt: Date = new Date(),
+    id: string = createId('comment'),
+  ) {
+    this.id = id
     this.text = assertValidText(text)
     this.author = author
     this.createdAt = createdAt
@@ -53,10 +58,15 @@ export class Post {
   private readonly author: Author
   private readonly createdAt: Date
 
-  constructor(text: string, author: Author, createdAt: Date = new Date()) {
-    this.id = createId('post')
+  constructor(
+    text: string,
+    author: Author,
+    createdAt: Date = new Date(),
+    options?: { id?: string; likeCount?: number },
+  ) {
+    this.id = options?.id ?? createId('post')
     this.text = assertValidText(text)
-    this.likeCount = 0
+    this.likeCount = options?.likeCount ?? 0
     this.comments = []
     this.author = author
     this.createdAt = createdAt
@@ -100,6 +110,63 @@ export class Post {
   getCreatedAt(): Date {
     return this.createdAt
   }
+}
+
+export type ApiAuthor = {
+  displayName?: string
+  handle?: string
+  avatarUrl?: string
+}
+
+export type ApiComment = {
+  id?: string
+  text: string
+  timestamp?: string
+  author?: ApiAuthor
+}
+
+export type ApiPost = {
+  id: string
+  text: string
+  likeCount?: number
+  comments?: ApiComment[]
+  author?: ApiAuthor
+  createdAt?: string
+}
+
+function parseTimestamp(value: string | undefined, fallback: Date): Date {
+  if (!value?.trim()) return fallback
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed
+}
+
+function authorFromApi(raw: ApiAuthor | undefined): Author {
+  const displayName = raw?.displayName?.trim() || 'Unknown'
+  const handle = raw?.handle?.trim() || 'unknown'
+  const avatarUrl = raw?.avatarUrl?.trim() || ''
+  return { displayName, handle, avatarUrl }
+}
+
+/** Hydrate domain models from GET /api/posts JSON. */
+export function postFromApi(dto: ApiPost): Post {
+  const createdAt = parseTimestamp(dto.createdAt, new Date())
+  const post = new Post(dto.text, authorFromApi(dto.author), createdAt, {
+    id: dto.id,
+    likeCount: typeof dto.likeCount === 'number' ? dto.likeCount : 0,
+  })
+
+  for (const comment of dto.comments ?? []) {
+    post.addComment(
+      new Comment(
+        comment.text,
+        authorFromApi(comment.author),
+        parseTimestamp(comment.timestamp, createdAt),
+        comment.id?.trim() || createId('comment'),
+      ),
+    )
+  }
+
+  return post
 }
 
 export { MAX_TEXT_LENGTH }

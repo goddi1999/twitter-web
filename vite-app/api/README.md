@@ -4,7 +4,7 @@ Vercel Edge functions for a Post / Comment / Like feed used by the Vite UI.
 
 ## What it does
 
-HTTP handlers under `/api` **list** posts and **append** full post publishes. Shared validation and DTOs live in `../lib`. Persistence is an in-memory **append-only log** (Edge-safe, no database) that resets on cold start. **Supabase will replace this later.**
+HTTP handlers under `/api` **list** posts and **append** full post publishes. Shared validation and DTOs live in `../lib`. Persistence is Supabase table `publishes` (`post` jsonb, append-only). Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`.
 
 ### Rules
 
@@ -152,11 +152,12 @@ GET: posts = latest per id | publishes = full log
 
 | Setting | Where | Value |
 | --- | --- | --- |
-| Runtime | each `api/**/*.ts` `config` | `edge` |
+| Runtime | each `api/**/*.ts` `config` | `nodejs` |
 | Region | same | `fra1` |
 | Max text / comment length | `lib/posts.ts` `MAX_TEXT_LENGTH` | `280` |
 | Author | `resolveAuthor()` | `@wq-org/avatars` via optional `avatarId`, else random |
-| Storage | `lib/store.ts` | append-only log, group by `id` (→ Supabase later) |
+| Storage | `lib/store.ts` → Supabase `publishes` | append-only jsonb, group by `post.id` |
+| Env | Vercel / `.env.local` | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` |
 
 ## Design decisions
 
@@ -167,7 +168,7 @@ GET: posts = latest per id | publishes = full log
 
 ## Known limitations
 
-- Log resets on redeploy / cold start / another isolate.
+- Publishable (anon) key needs table grants / RLS policies that allow `select` + `insert` on `publishes`.
 - No auth; CORS allows any origin.
 - `npm run dev` (Vite) does not serve these functions — use `vercel dev`.
 
@@ -177,4 +178,4 @@ GET: posts = latest per id | publishes = full log
 npm run typecheck
 ```
 
-Shared logic belongs in `lib/`. Keep `export const config = { runtime: 'edge', regions: ['fra1'] }` on routes.
+Shared logic belongs in `lib/`. Keep `export const config = { runtime: 'nodejs', regions: ['fra1'] }` on routes.

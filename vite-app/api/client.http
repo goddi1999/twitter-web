@@ -1,0 +1,121 @@
+### Variables
+# Local API needs `npx vercel dev` in vite-app (port 3000).
+# `npm run dev` alone (5173) does NOT serve /api → connection rejected / SPA HTML.
+# Prod: Reutlingen VPN required (firewall only allows 134.103.92.135 for /api).
+@local = http://localhost:3000
+@prod = https://twitter-web-inky.vercel.app
+@baseUrl = {{local}}
+# For production tests: set @baseUrl = {{prod}} and connect VPN first.
+
+@postId = b4c13d40-011e-4367-aadd-35bf758412f2
+@commentId1 = b44da884-8a1b-4bee-942a-1027bc7e2b2e
+@commentId2 = 3393ce10-9747-40ce-989d-07d871665d3f
+@commentId3 = a0e34d46-59a5-4d36-a115-8e0ea36e233f
+@avatarId = avatar_female_german_01
+
+### List posts (grouped) + publish history
+GET {{baseUrl}}/api/posts
+Accept: application/json
+
+### Publish post (create) — with avatarId
+POST {{baseUrl}}/api/post
+Content-Type: application/json
+Accept: application/json
+
+{
+  "post": {
+    "id": "{{postId}}",
+    "text": "Hallo Hochschule Reutlingen!",
+    "likeCount": 0,
+    "comments": [],
+    "avatarId": "{{avatarId}}"
+  }
+}
+
+### Publish post — full document with comments + likes
+# Same post.id = append; newest snapshot wins for the feed
+POST {{baseUrl}}/api/post
+Content-Type: application/json
+Accept: application/json
+
+{
+  "post": {
+    "id": "{{postId}}",
+    "text": "dhufupidfhuaehdf",
+    "likeCount": 12,
+    "comments": [
+      {
+        "id": "{{commentId1}}",
+        "text": "dafgfgdfgfgfdfgfgdfg",
+        "timestamp": "2026-09-27T14:22:05"
+      },
+      {
+        "id": "{{commentId2}}",
+        "text": "dagffg",
+        "timestamp": "2026-09-27T14:22:07"
+      },
+      {
+        "id": "{{commentId3}}",
+        "text": "dagfgadf",
+        "timestamp": "2026-09-27T14:22:08"
+      }
+    ],
+    "avatarId": "{{avatarId}}"
+  }
+}
+
+### Publish post — random author (omit avatarId)
+POST {{baseUrl}}/api/post
+Content-Type: application/json
+Accept: application/json
+
+{
+  "post": {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "text": "Post without avatarId — server picks random memoji",
+    "likeCount": 0,
+    "comments": []
+  }
+}
+
+### CORS preflight (OPTIONS)
+OPTIONS {{baseUrl}}/api/post
+Origin: http://localhost:5173
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: content-type
+
+### Prod: list posts
+# Switch: set @baseUrl = {{prod}} above, or send this request as-is
+GET {{prod}}/api/posts
+Accept: application/json
+
+### Prod: publish with comments
+POST {{prod}}/api/post
+Content-Type: application/json
+Accept: application/json
+
+{
+  "post": {
+    "id": "{{postId}}",
+    "text": "dhufupidfhuaehdf",
+    "likeCount": 12,
+    "comments": [
+      {
+        "id": "{{commentId1}}",
+        "text": "dafgfgdfgfgfdfgfgdfg",
+        "timestamp": "2026-09-27T14:22:05"
+      },
+      {
+        "id": "{{commentId2}}",
+        "text": "dagffg",
+        "timestamp": "2026-09-27T14:22:07"
+      },
+      {
+        "id": "{{commentId3}}",
+        "text": "dagfgadf",
+        "timestamp": "2026-09-27T14:22:08"
+      }
+    ],
+    "avatarId": "{{avatarId}}"
+  }
+}

@@ -1,4 +1,10 @@
-export { Post, Comment, MAX_TEXT_LENGTH } from './post.model'
+export {
+  Post,
+  Comment,
+  MAX_TEXT_LENGTH,
+  postFromApi,
+} from './post.model'
+export type { ApiPost, ApiComment, ApiAuthor } from './post.model'
 export type { Author } from './post.types'
 export { formatRelativeTime } from './format-relative-time'
 export { PostCard, POST_CARD_WIDTH_CLASS } from './PostCard'

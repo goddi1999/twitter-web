@@ -2,8 +2,9 @@ import { error, json, options, readJson } from '../../lib/http.js'
 import { getPost, parseFullPost, publishPost } from '../../lib/posts.js'
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
   regions: ['fra1'],
+  maxDuration: 30,
 }
 
 type PublishBody = {
@@ -14,16 +15,13 @@ type PublishBody = {
 /**
  * POST /api/post
  *
- * Append-only publish. The client sends the **entire** post after any local change
- * (create, like, add/remove comment). We only store — we never overwrite a previous
- * publish. Supabase will replace this log later.
+ * Append-only publish into Supabase `publishes`. The client sends the **entire**
+ * post after any local change (create, like, add/remove comment).
  *
  * Optional `avatarId` (e.g. `avatar_female_german_01`) or `author: { id }` selects a
  * `@wq-org/avatars` memoji; the server resolves name → displayName + handle + CDN url.
- * Do **not** send `displayName`, `handle`, or `avatarUrl`.
  *
  * Body: { "post": { id, text, likeCount, comments, createdAt?, avatarId? } }
- * `post.id` is required so publishes can be grouped later.
  */
 export async function POST(request: Request) {
   try {
@@ -36,9 +34,9 @@ export async function POST(request: Request) {
       rawPost && typeof rawPost.id === 'string' && rawPost.id.trim()
         ? rawPost.id.trim()
         : null
-    const previous = existingId ? getPost(existingId) : null
-    const parsed = parseFullPost(body.post, previous)
-    const post = publishPost(parsed)
+    const previous = existingId ? await getPost(existingId) : null
+    const parsed = await parseFullPost(body.post, previous)
+    const post = await publishPost(parsed)
     return json({ post }, 201)
   } catch (err) {
     console.error('POST /api/post failed', err)
@@ -48,7 +46,8 @@ export async function POST(request: Request) {
       message.includes('muss') ||
       message.includes('erforderlich') ||
       message.includes('ungültig') ||
-      message.includes('JSON')
+      message.includes('JSON') ||
+      message.includes('Supabase')
         ? 400
         : 500
     return error(message, status)

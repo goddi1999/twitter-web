@@ -69,7 +69,7 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
 
     let post: Post
     try {
-      post = new Post(trimmed, author)
+      post = new Post(trimmed, author, new Date(), { id: crypto.randomUUID() })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid post')
       setIsSubmitting(false)
