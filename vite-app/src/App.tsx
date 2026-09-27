@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, RefreshCw } from 'lucide-react'
 
 import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
+import { ThemeModeToggle } from '@/components/ThemeModeToggle'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
 
 const NAV_ITEMS: MenuItem[] = [
   { id: 'home', label: 'Home' },
@@ -25,17 +27,38 @@ type AppView = 'home' | 'create' | 'docs'
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [view, setView] = useState<AppView>('home')
+  const [feedKey, setFeedKey] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+
+  function handleRefresh() {
+    setRefreshing(true)
+    setFeedKey((key) => key + 1)
+    window.setTimeout(() => setRefreshing(false), 400)
+  }
 
   return (
     <div className="relative flex min-h-svh flex-col">
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        {view === 'home' ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Refresh posts"
+            onClick={handleRefresh}
+            className="h-10 w-10 rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
+          >
+            <RefreshCw className={cn('size-5', refreshing && 'animate-spin')} />
+          </Button>
+        ) : null}
+        <ThemeModeToggle />
         <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               aria-label="Open menu"
-              className="bg-background/80 shadow-sm backdrop-blur-sm"
+              className="h-10 w-10 rounded-full bg-background/80 shadow-sm backdrop-blur-sm"
             >
               <Menu className="size-5" />
             </Button>
@@ -68,7 +91,7 @@ export function App() {
       ) : view === 'docs' ? (
         <DocsPage />
       ) : (
-        <PostPage />
+        <PostPage key={feedKey} />
       )}
     </div>
   )
