@@ -6,6 +6,7 @@ import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
 import { ThemeSwitcher } from '@/components/theme-switcher'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
+import { useAccentTheme } from '@/components/use-accent-theme'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -29,6 +30,8 @@ export function App() {
   const [view, setView] = useState<AppView>('home')
   const [feedKey, setFeedKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  // Apply accent from themes.ts (`data-accent` → CSS primary tokens)
+  useAccentTheme()
 
   function handleRefresh() {
     setRefreshing(true)
@@ -37,7 +40,7 @@ export function App() {
   }
 
   return (
-    <div className="relative flex min-h-svh flex-col">
+    <div className="relative flex min-h-svh flex-col bg-background text-foreground">
       <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
         {view === 'home' ? (
           <Button
