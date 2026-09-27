@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react'
 
 import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,20 +40,25 @@ export function App() {
               <Menu className="size-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-full sm:max-w-md">
+          <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
             <SheetHeader>
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
-            <TreeMenu
-              items={NAV_ITEMS}
-              className="min-h-0 justify-start pt-4 pb-8"
-              onSelect={(item) => {
-                if (item.id === 'home' || item.id === 'create' || item.id === 'docs') {
-                  setView(item.id)
-                }
-                setMenuOpen(false)
-              }}
-            />
+            <div className="flex min-h-0 flex-1 flex-col">
+              <TreeMenu
+                items={NAV_ITEMS}
+                className="min-h-0 flex-1 justify-start pt-4 pb-4"
+                onSelect={(item) => {
+                  if (item.id === 'home' || item.id === 'create' || item.id === 'docs') {
+                    setView(item.id)
+                  }
+                  setMenuOpen(false)
+                }}
+              />
+              <div className="mt-auto border-t border-border/60 px-4 py-4">
+                <ThemeSwitcher />
+              </div>
+            </div>
           </SheetContent>
         </Sheet>
       </div>

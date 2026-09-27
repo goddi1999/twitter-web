@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 import { FieldInput } from '@/components/ui/field-input'
 import {
@@ -10,13 +10,11 @@ import {
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
-import { createDemoPostBatch, createDemoPosts } from './demo-data'
 import { PostCard } from './PostCard'
 import { PostGroupTabs } from './PostGroupTabs'
 import { PostThread } from './PostThread'
 import type { Post } from './post.model'
 
-const BATCH_SIZE = 8
 const CARD_WIDTH = '18.75rem'
 
 type PostFeedProps = {
@@ -31,21 +29,16 @@ function matchesDescription(post: Post, query: string): boolean {
 }
 
 export function PostFeed({ initialPosts, className }: PostFeedProps) {
-  const [posts, setPosts] = useState<Post[]>(() => initialPosts ?? createDemoPosts())
+  const [posts, setPosts] = useState<Post[]>(() => initialPosts ?? [])
   const [query, setQuery] = useState('')
   const [groupPostId, setGroupPostId] = useState<string | null>(null)
   const [openPostId, setOpenPostId] = useState<string | null>(null)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  const batchOffsetRef = useRef(initialPosts?.length ?? BATCH_SIZE)
-  const loadingRef = useRef(false)
 
   const filteredPosts = posts.filter((post) => {
     if (groupPostId !== null && post.id !== groupPostId) return false
     return matchesDescription(post, query)
   })
   const openPost = posts.find((post) => post.id === openPostId) ?? null
-  const isFiltering = query.trim().length > 0 || groupPostId !== null
 
   const postCountByHandle = new Map<string, number>()
   for (const post of posts) {
@@ -69,34 +62,6 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
   function handleOpen(post: Post) {
     setOpenPostId(post.id)
   }
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current
-    if (!sentinel) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0]
-        if (!entry?.isIntersecting || loadingRef.current || isFiltering) return
-
-        loadingRef.current = true
-        setIsLoadingMore(true)
-
-        const next = createDemoPostBatch(BATCH_SIZE, batchOffsetRef.current)
-        batchOffsetRef.current += next.length
-        setPosts((current) => [...current, ...next])
-        setIsLoadingMore(false)
-
-        window.setTimeout(() => {
-          loadingRef.current = false
-        }, 300)
-      },
-      { root: null, rootMargin: '240px', threshold: 0 },
-    )
-
-    observer.observe(sentinel)
-    return () => observer.disconnect()
-  }, [isFiltering])
 
   return (
     <div className={cn('w-full text-left', className)}>
@@ -134,16 +99,11 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
 
       {filteredPosts.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          No posts match that filter.
+          {posts.length === 0
+            ? 'No posts yet. Create one or publish via the API.'
+            : 'No posts match that filter.'}
         </p>
       ) : null}
-
-      <div
-        ref={sentinelRef}
-        className="flex h-16 items-center justify-center text-sm text-muted-foreground"
-      >
-        {!isFiltering && isLoadingMore ? 'Loading…' : null}
-      </div>
 
       <Sheet
         open={openPostId !== null}
