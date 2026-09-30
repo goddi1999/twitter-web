@@ -3,6 +3,7 @@ import { DemoPage } from '@/components/demo-page'
 import { AvatarCatalogTable } from './avatar-table'
 import { DocsCopyableLink } from './copyable-link'
 import { DocsMarkdown } from './markdown'
+import { JavaSetupTabs } from './java-setup'
 import { DocsRequestTabs, type RequestTabId } from './request-tabs'
 
 /** Official production API base. Local: `npx vercel dev` → http://localhost:3000 */
@@ -239,6 +240,13 @@ export function DocsPage() {
             <DocsCopyableLink label="wq-avatars repo" value={AVATARS_REPO} />
           </div>
         </div>
+
+        <section id="java-setup" className="scroll-mt-8 space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Java 25 (OpenJDK) installieren
+          </h2>
+          <JavaSetupTabs />
+        </section>
 
         <section id="list" className="scroll-mt-8 space-y-4">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">List posts</h2>
