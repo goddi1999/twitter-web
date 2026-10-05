@@ -7,8 +7,6 @@ type CommandGuide = {
   title: string
   /** Pattern with placeholders, e.g. cd <ordnername> */
   syntax: string
-  /** Concrete example ready to adapt */
-  example: string
   explanation: string
 }
 
@@ -17,7 +15,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'cd',
     title: 'cd — in einen Ordner rein',
     syntax: 'cd <ordnername>',
-    example: 'cd mein-projekt',
     explanation: `**Was es ist** — \`cd\` (change directory) wechselt den aktuellen Ordner im Terminal. \`<ordnername>\` ist ein Platzhalter: du ersetzt ihn durch den echten Namen, z. B. \`mein-projekt\`. Es öffnet kein neues Fenster — es ändert nur, wo du „stehst“.
 
 **Warum wir es brauchen** — Stell dir den Computer wie ein Haus mit Zimmern vor. Ohne \`cd\` bleibst du immer im Flur. Mit \`cd <ordnername>\` gehst du in ein bestimmtes Zimmer, damit die nächsten Befehle dort wirken.
@@ -37,7 +34,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'mkdir',
     title: 'mkdir — Ordner erstellen',
     syntax: 'mkdir <ordnername>',
-    example: 'mkdir mein-projekt',
     explanation: `**Was es ist** — \`mkdir\` (make directory) legt einen neuen Ordner an. \`<ordnername>\` ersetzt du durch den gewünschten Namen, z. B. \`mein-projekt\`.
 
 **Warum wir es brauchen** — Bevor du Dateien sortierst, brauchst du eine Schublade. Ohne Ordner landet alles wild durcheinander. Mit \`mkdir <ordnername>\` baust du zuerst die Schublade.
@@ -57,7 +53,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'cd-up',
     title: 'cd .. — aus einem Ordner raus',
     syntax: 'cd ..',
-    example: 'cd ..',
     explanation: `**Was es ist** — \`cd ..\` geht eine Ebene nach oben: aus dem aktuellen Ordner zurück in den Eltern-Ordner. Die zwei Punkte \`..\` bedeuten „einen Schritt zurück“ — kein Platzhalter, genau so tippen.
 
 **Warum wir es brauchen** — Du bist im Zimmer und willst zurück in den Flur. Ohne \`cd ..\` müsstest du den ganzen Pfad von vorne tippen.
@@ -77,7 +72,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'ls',
     title: 'ls — Ordnerinhalt anzeigen',
     syntax: 'ls',
-    example: 'ls',
     explanation: `**Was es ist** — \`ls\` (list) zeigt, was im aktuellen Ordner liegt: Dateien und Unterordner. Kein Platzhalter nötig. Es verändert nichts — es liest nur.
 
 **Warum wir es brauchen** — Wie in eine Schublade schauen, bevor du etwas herausnimmst. Mit \`ls\` siehst du die echten Namen für \`cd\` und \`mkdir\`.
@@ -97,7 +91,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'code',
     title: 'code . — Ordner in VS Code öffnen',
     syntax: 'code .',
-    example: 'code .',
     explanation: `**Was es ist** — \`code\` startet Visual Studio Code. Der Punkt \`. \` bedeutet „dieser Ordner hier“ (der aktuelle). Also: öffne den aktuellen Ordner als Projekt.
 
 **Warum wir es brauchen** — Du hast den Ordner im Terminal gefunden. Statt im Finder zu klicken, öffnest du ihn mit einem Befehl genau dort, wo du stehst.
@@ -117,7 +110,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'gradle-init',
     title: 'gradle init — Gradle-Projekt starten',
     syntax: 'gradle init',
-    example: 'gradle init',
     explanation: `**Was es ist** — \`gradle init\` startet ein neues Gradle-Projekt. Gradle ist ein Bau-Werkzeug: es kennt Abhängigkeiten, baut und testet dein Java-Projekt. \`init\` legt die Grundstruktur an.
 
 **Warum wir es brauchen** — Ein leerer Ordner hat keine Bau-Regeln. Mit \`gradle init\` bekommst du eine Standard-Startstruktur — wie ein leeres Schulheft mit Linien.
@@ -137,7 +129,6 @@ const COMMANDS: CommandGuide[] = [
     id: 'sudo-rm-r',
     title: 'sudo rm -r — Ordner löschen (Vorsicht!)',
     syntax: 'sudo rm -r <ordnername>',
-    example: 'sudo rm -r alter-ordner',
     explanation: `**Was es ist** — Ein Lösch-Befehl aus drei Teilen. \`rm\` bedeutet remove (löschen). \`<ordnername>\` ersetzt du durch den echten Ordner — die \`<>\` tippst du nicht. Die Flags (Zusatzbuchstaben nach dem Bindestrich) ändern, *wie* gelöscht wird.
 
 **Flags — was jeder Teil bedeutet**
@@ -166,7 +157,7 @@ export function UsefulCommandsPage() {
     <DemoPage
       eyebrow="terminal"
       title="Useful commands"
-      description="Syntax mit Platzhaltern (<…> ersetzt du — die Klammern tippst du nicht). Jeder Block ist kopierbar; Erklärung auf Deutsch."
+      description="Ein Syntax-Block pro Befehl (<…> ersetzt du — die Klammern tippst du nicht). Kopierbar; Erklärung auf Deutsch."
       align="start"
       className="max-w-4xl pb-24"
     >
@@ -177,7 +168,6 @@ export function UsefulCommandsPage() {
               {item.title}
             </h2>
             <DocsCodeBlock language="bash" title="Syntax" code={item.syntax} />
-            <DocsCodeBlock language="bash" title="Beispiel (kopieren & anpassen)" code={item.example} />
             <DocsMarkdown>{item.explanation}</DocsMarkdown>
           </section>
         ))}
