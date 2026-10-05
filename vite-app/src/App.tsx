@@ -5,6 +5,7 @@ import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
+import { UsefulCommandsPage } from '@/components/useful-commands'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -19,9 +20,10 @@ const NAV_ITEMS: MenuItem[] = [
   { id: 'home', label: 'Home' },
   { id: 'create', label: 'Create post' },
   { id: 'docs', label: 'Docs' },
+  { id: 'useful-commands', label: 'Useful commands' },
 ]
 
-type AppView = 'home' | 'create' | 'docs'
+type AppView = 'home' | 'create' | 'docs' | 'useful-commands'
 
 export function App() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -70,7 +72,12 @@ export function App() {
               items={NAV_ITEMS}
               className="min-h-0 flex-1 justify-start pt-4 pb-4"
               onSelect={(item) => {
-                if (item.id === 'home' || item.id === 'create' || item.id === 'docs') {
+                if (
+                  item.id === 'home' ||
+                  item.id === 'create' ||
+                  item.id === 'docs' ||
+                  item.id === 'useful-commands'
+                ) {
                   setView(item.id)
                 }
                 setMenuOpen(false)
@@ -84,6 +91,8 @@ export function App() {
         <CreatePostPage onPublished={() => setView('home')} />
       ) : view === 'docs' ? (
         <DocsPage />
+      ) : view === 'useful-commands' ? (
+        <UsefulCommandsPage />
       ) : (
         <PostPage key={feedKey} />
       )}
