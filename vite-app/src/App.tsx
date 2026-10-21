@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { ArrowLeft, BookOpen, Menu, Network, RefreshCw } from 'lucide-react'
 
+import { OrderServiceGuide } from '@/components/distributed'
 import { DocsCodeBlock, DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
@@ -259,6 +260,8 @@ function DistributedSystemsPage({ onBack }: { onBack: () => void }) {
             </Card>
           </li>
         </ul>
+
+        <OrderServiceGuide />
       </main>
     </>
   )

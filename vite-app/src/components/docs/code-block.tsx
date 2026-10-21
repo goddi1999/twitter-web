@@ -3,6 +3,8 @@ import { Check, Copy } from 'lucide-react'
 import hljs from 'highlight.js/lib/core'
 import bash from 'highlight.js/lib/languages/bash'
 import java from 'highlight.js/lib/languages/java'
+import javascript from 'highlight.js/lib/languages/javascript'
+import json from 'highlight.js/lib/languages/json'
 
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,12 +12,14 @@ import { cn } from '@/lib/utils'
 import './docs-highlight.css'
 
 hljs.registerLanguage('java', java)
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('json', json)
 hljs.registerLanguage('bash', bash)
 hljs.registerLanguage('sh', bash)
 hljs.registerLanguage('shell', bash)
 hljs.registerLanguage('curl', bash)
 
-type DocsLanguage = 'java' | 'bash' | 'curl' | 'sh' | 'shell'
+type DocsLanguage = 'java' | 'javascript' | 'json' | 'bash' | 'curl' | 'sh' | 'shell'
 
 type DocsCodeBlockProps = {
   code: string
@@ -27,6 +31,8 @@ type DocsCodeBlockProps = {
 function normalizeLanguage(language: string): DocsLanguage {
   const value = language.toLowerCase()
   if (value === 'java') return 'java'
+  if (value === 'javascript' || value === 'js') return 'javascript'
+  if (value === 'json') return 'json'
   if (value === 'curl') return 'curl'
   return 'bash'
 }
