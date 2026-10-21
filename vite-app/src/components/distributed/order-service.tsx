@@ -149,6 +149,9 @@ type Copy = {
   baseFiles: string[]
   baseSteps: string[]
   baseInstallNote: string
+  helloTitle: string
+  helloIntro: string
+  helloTest: string
   initialTitle: string
   initial: string[]
   setupTitle: string
@@ -246,6 +249,11 @@ const COPY: Record<Lang, Copy> = {
       'Run npm start. You should see "Server is running on port 6010".',
     ],
     baseInstallNote: 'Without npm install the server will not start, because the packages are missing.',
+    helloTitle: 'Try it: your first GET request',
+    helloIntro:
+      'Add this route to index.js above the "Start Server" part. A GET request asks the server for data. Here the server answers with a text.',
+    helloTest:
+      'Restart the server (stop it, then run npm start again). Open the URL below in your browser or in Postman with GET. You should see: Hallo Welt',
     initialTitle: 'Initial Situation',
     initial: [
       'Your task is to develop a system that allows users to buy, sell, and adjust stocks. Later, users should also be able to query prices and view information about their portfolios.',
@@ -387,6 +395,11 @@ const COPY: Record<Lang, Copy> = {
       'Führen Sie npm start aus. Sie sollten "Server is running on port 6010" sehen.',
     ],
     baseInstallNote: 'Ohne npm install startet der Server nicht, weil die Pakete fehlen.',
+    helloTitle: 'Ausprobieren: Ihr erster GET-Request',
+    helloIntro:
+      'Fügen Sie diese Route in index.js oberhalb von "Start Server" ein. Ein GET-Request fragt Daten vom Server ab. Hier antwortet der Server mit einem Text.',
+    helloTest:
+      'Starten Sie den Server neu (stoppen, dann erneut npm start). Öffnen Sie die URL unten im Browser oder in Postman mit GET. Sie sollten sehen: Hallo Welt',
     initialTitle: 'Ausgangssituation',
     initial: [
       'Ihre Aufgabe ist es, ein System zu entwickeln, welches es Nutzern ermöglicht Aktien zu kaufen, zu verkaufen und anzupassen. Später sollen Nutzer auch Preise abfragen und Informationen zu ihren Portfolios einsehen können.',
@@ -723,6 +736,15 @@ export function OrderServiceGuide() {
           <Para>
             <Highlight text={t.baseInstallNote} />
           </Para>
+          <h3 className="text-sm font-semibold">{t.helloTitle}</h3>
+          <Para>
+            <Highlight text={t.helloIntro} />
+          </Para>
+          <DocsCodeBlock title="index.js" language="javascript" code={HELLO_CODE} />
+          <Para>
+            <Highlight text={t.helloTest} />
+          </Para>
+          <DocsCodeBlock title="URL (GET)" language="bash" code={`${BASE_URL}/hello`} />
         </Section>
 
         <Section title={t.initialTitle}>
