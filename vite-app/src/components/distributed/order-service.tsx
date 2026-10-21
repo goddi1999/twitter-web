@@ -62,6 +62,29 @@ app.listen(PORT, () => {
     console.info(\`Server is running on port \${PORT}\`)
 });`
 
+const LOG_CODE = `app.post('/orders', (req, res) => {
+    console.info(req.method, req.url);
+    console.info('body:', req.body);
+    console.info('query:', req.query);
+    res.status(STATUS_OK).send('ok');
+});`
+
+const REQ_ATTRS = [
+  'req.method - HTTP method, e.g. GET or POST',
+  'req.url - the called path, e.g. /orders?state=0',
+  'req.params - values from the path, e.g. req.params.id for /orders/:id',
+  'req.query - values after the ?, e.g. req.query.state',
+  'req.body - the JSON sent by the client (needs BodyParser)',
+  'req.headers - request headers, e.g. content-type',
+]
+
+const RES_ATTRS = [
+  'res.status(code) - sets the HTTP status, e.g. 201',
+  'res.send(data) - sends the reply',
+  'res.statusCode - the status that was set',
+  'res.json(obj) - sends an object as JSON',
+]
+
 const HELLO_CODE = `app.get('/hello', (req, res) => {
     res.status(STATUS_OK).send('Hallo Welt');
 });`
@@ -156,6 +179,11 @@ type Copy = {
   helloTitle: string
   helloIntro: string
   helloTest: string
+  attrsTitle: string
+  attrsIntro: string
+  reqLabel: string
+  resLabel: string
+  attrsLog: string
   initialTitle: string
   initial: string[]
   setupTitle: string
@@ -258,6 +286,12 @@ const COPY: Record<Lang, Copy> = {
       'Add this route to index.js above the "Start Server" part. A GET request asks the server for data. Here the server answers with a text.',
     helloTest:
       'Restart the server (stop it, then run npm start again). Open the URL below in your browser or in Postman with GET. You should see: Hallo Welt',
+    attrsTitle: 'Request and Response: useful attributes',
+    attrsIntro:
+      'Every route gets a req (the request from the client) and a res (the response you send back). These attributes help a lot when you want to log what happens:',
+    reqLabel: 'Request (req)',
+    resLabel: 'Response (res)',
+    attrsLog: 'Example: log what arrives, so you can see it in the terminal.',
     initialTitle: 'Initial Situation',
     initial: [
       'Your task is to develop a system that allows users to buy, sell, and adjust stocks. Later, users should also be able to query prices and view information about their portfolios.',
@@ -404,6 +438,12 @@ const COPY: Record<Lang, Copy> = {
       'Fügen Sie diese Route in index.js oberhalb von "Start Server" ein. Ein GET-Request fragt Daten vom Server ab. Hier antwortet der Server mit einem Text.',
     helloTest:
       'Starten Sie den Server neu (stoppen, dann erneut npm start). Öffnen Sie die URL unten im Browser oder in Postman mit GET. Sie sollten sehen: Hallo Welt',
+    attrsTitle: 'Request und Response: nützliche Attribute',
+    attrsIntro:
+      'Jede Route erhält ein req (die Anfrage des Clients) und ein res (die Antwort, die Sie zurücksenden). Diese Attribute helfen beim Loggen, was gerade passiert:',
+    reqLabel: 'Request (req)',
+    resLabel: 'Response (res)',
+    attrsLog: 'Beispiel: Eingehende Daten loggen, damit Sie sie im Terminal sehen.',
     initialTitle: 'Ausgangssituation',
     initial: [
       'Ihre Aufgabe ist es, ein System zu entwickeln, welches es Nutzern ermöglicht Aktien zu kaufen, zu verkaufen und anzupassen. Später sollen Nutzer auch Preise abfragen und Informationen zu ihren Portfolios einsehen können.',
@@ -749,6 +789,14 @@ export function OrderServiceGuide() {
             <Highlight text={t.helloTest} />
           </Para>
           <DocsCodeBlock title="URL (GET)" language="bash" code={`${BASE_URL}/hello`} />
+          <h3 className="text-sm font-semibold">{t.attrsTitle}</h3>
+          <Para>{t.attrsIntro}</Para>
+          <p className="text-sm font-medium">{t.reqLabel}</p>
+          <Bullets items={REQ_ATTRS} mono />
+          <p className="text-sm font-medium">{t.resLabel}</p>
+          <Bullets items={RES_ATTRS} mono />
+          <Para>{t.attrsLog}</Para>
+          <DocsCodeBlock title="index.js" language="javascript" code={LOG_CODE} />
         </Section>
 
         <Section title={t.initialTitle}>
