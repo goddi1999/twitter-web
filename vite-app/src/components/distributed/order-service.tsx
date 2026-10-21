@@ -22,7 +22,47 @@ type Lang = 'en' | 'de'
 const ORDER_EXAMPLE_ID = 'd76b2e52'
 const BASE_URL = 'http://localhost:6010'
 
-const SERVER_START_CODE = `const PORT = 6010;
+const BASE_PACKAGE_JSON = `{
+  "name": "0000-base-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \\"Error: no test specified\\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^5.3.0"
+  }
+}`
+
+const BASE_INDEX_JS = `const express = require('express');
+const bodyParser = require('body-parser');
+const { randomBytes } = require('crypto');
+const cors = require('cors');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(cors());
+
+const STATUS_BAD_REQUEST = 400;
+const STATUS_NOT_FOUND = 404;
+const STATUS_CREATED = 201;
+const STATUS_OK = 200;
+
+//Start Server
+const PORT = process.env.PORT || 6010;
+app.listen(PORT, () => {
+    console.info(\`Server is running on port \${PORT}\`)
+});`
+
+const SERVER_START_CODE =`const PORT = 6010;
 app.listen(PORT, () => {
    console.info(\`Server is running on port \${PORT}\`)
 });`
@@ -104,6 +144,11 @@ type Copy = {
   title: string
   subtitle: string
   version: string
+  baseTitle: string
+  baseIntro: string
+  baseFiles: string[]
+  baseSteps: string[]
+  baseInstallNote: string
   initialTitle: string
   initial: string[]
   setupTitle: string
@@ -189,6 +234,18 @@ const COPY: Record<Lang, Copy> = {
     title: 'Stock Order Service',
     subtitle: 'Build an in-memory REST service with Node.js and Express to buy, sell, and adjust stocks.',
     version: 'v1.2 – 22.10.2025',
+    baseTitle: 'Base Project (Start Here)',
+    baseIntro: 'Create a folder with these two files. This is the starting point for the whole exercise.',
+    baseFiles: [
+      'package.json - lists the packages the project needs',
+      'index.js - starts the Express server',
+    ],
+    baseSteps: [
+      'Save the first block as package.json and the second as index.js in the same folder.',
+      'Open a terminal in that folder and run npm install. This downloads the packages into node_modules.',
+      'Run npm start. You should see "Server is running on port 6010".',
+    ],
+    baseInstallNote: 'Without npm install the server will not start, because the packages are missing.',
     initialTitle: 'Initial Situation',
     initial: [
       'Your task is to develop a system that allows users to buy, sell, and adjust stocks. Later, users should also be able to query prices and view information about their portfolios.',
@@ -318,6 +375,18 @@ const COPY: Record<Lang, Copy> = {
     subtitle:
       'Einen In-Memory REST-Service mit Node.js und Express zum Kaufen, Verkaufen und Anpassen von Aktien entwickeln.',
     version: 'v1.2 - 22.10.2025',
+    baseTitle: 'Base Project (Hier starten)',
+    baseIntro: 'Legen Sie einen Ordner mit diesen zwei Dateien an. Das ist der Startpunkt für die ganze Übung.',
+    baseFiles: [
+      'package.json - listet die benötigten Pakete auf',
+      'index.js - startet den Express-Server',
+    ],
+    baseSteps: [
+      'Speichern Sie den ersten Block als package.json und den zweiten als index.js im selben Ordner.',
+      'Öffnen Sie ein Terminal in diesem Ordner und führen Sie npm install aus. Dadurch werden die Pakete in node_modules geladen.',
+      'Führen Sie npm start aus. Sie sollten "Server is running on port 6010" sehen.',
+    ],
+    baseInstallNote: 'Ohne npm install startet der Server nicht, weil die Pakete fehlen.',
     initialTitle: 'Ausgangssituation',
     initial: [
       'Ihre Aufgabe ist es, ein System zu entwickeln, welches es Nutzern ermöglicht Aktien zu kaufen, zu verkaufen und anzupassen. Später sollen Nutzer auch Preise abfragen und Informationen zu ihren Portfolios einsehen können.',
@@ -472,6 +541,24 @@ function Para({ children }: { children: ReactNode }) {
   return <p className="text-sm leading-relaxed text-muted-foreground">{children}</p>
 }
 
+const HIGHLIGHT = /(package\.json|index\.js|node_modules|npm install|npm start)/g
+
+function Highlight({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(HIGHLIGHT).map((part, i) =>
+        i % 2 === 1 ? (
+          <code key={i} className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+            {part}
+          </code>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  )
+}
+
 function Bullets({ items, mono = false }: { items: string[]; mono?: boolean }) {
   return (
     <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-muted-foreground">
@@ -614,6 +701,30 @@ export function OrderServiceGuide() {
       </header>
 
       <ul className="flex list-none flex-col gap-4 p-0">
+        <Section title={t.baseTitle}>
+          <Para>{t.baseIntro}</Para>
+          <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-muted-foreground">
+            {t.baseFiles.map((file) => (
+              <li key={file}>
+                <Highlight text={file} />
+              </li>
+            ))}
+          </ul>
+          <DocsCodeBlock title="package.json" language="json" code={BASE_PACKAGE_JSON} />
+          <DocsCodeBlock title="index.js" language="javascript" code={BASE_INDEX_JS} />
+          <ol className="list-decimal space-y-1 pl-5 text-sm leading-relaxed text-muted-foreground">
+            {t.baseSteps.map((step) => (
+              <li key={step}>
+                <Highlight text={step} />
+              </li>
+            ))}
+          </ol>
+          <DocsCodeBlock title="terminal" language="bash" code={'npm install\nnpm start'} />
+          <Para>
+            <Highlight text={t.baseInstallNote} />
+          </Para>
+        </Section>
+
         <Section title={t.initialTitle}>
           {t.initial.map((paragraph) => (
             <Para key={paragraph}>{paragraph}</Para>
