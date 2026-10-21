@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { ArrowLeft, BookOpen, Menu, Network, RefreshCw } from 'lucide-react'
 
 import { OrderServiceGuide } from '@/components/distributed'
-import { DocsCodeBlock, DocsPage } from '@/components/docs'
+import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
 import { TreeMenu, type MenuItem } from '@/components/tree-menu'
@@ -49,7 +49,7 @@ const COURSES: {
   {
     id: 'distributed',
     title: 'Distributed Systems',
-    description: 'Course materials and exercises — coming soon.',
+    description: 'Stock Order Service exercise (0010) in English and German.',
     icon: Network,
   },
 ]
@@ -125,51 +125,6 @@ function CourseHome({ onSelect }: { onSelect: (id: CourseId) => void }) {
   )
 }
 
-const APP_CJS = `const express = require('express');
-const app = express();
-const port = 3000;
-const host = '127.0.0.1';
-
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
-
-app.listen(port, host, () => {
-  console.log(\`Example app listening at http://\${host}:\${port}/\`);
-});`
-
-const INSTALL_COMMANDS = `# Node.js 20 LTS (or newer) — check with: node -v
-# Example: v20.18.0
-
-mkdir hello-express && cd hello-express
-npm init -y
-npm install express
-
-# save the file as app.cjs, then:
-node app.cjs`
-
-const TERMINAL_OUTPUT = `Example app listening at http://127.0.0.1:3000/`
-
-const POSTMAN_ASCII = `┌─ Postman ─────────────────────────────────────────┐
-│  GET  http://127.0.0.1:3000/                      │
-├───────────────────────────────────────────────────┤
-│  Status   200 OK                                  │
-│  Time     ~5 ms                                   │
-│  Size     12 B                                    │
-├─ Headers ─────────────────────────────────────────┤
-│  Content-Type: text/html; charset=utf-8           │
-│  Content-Length: 12                               │
-│  Connection: keep-alive                           │
-│  Keep-Alive: timeout=5                            │
-│  X-Powered-By: Express                            │
-├─ Body (raw / Text) ───────────────────────────────┤
-│                                                   │
-│  Hello World!                                     │
-│                                                   │
-│  return type: string  (text/html, not JSON)       │
-│                                                   │
-└───────────────────────────────────────────────────┘`
-
 function DistributedSystemsPage({ onBack }: { onBack: () => void }) {
   return (
     <>
@@ -186,80 +141,9 @@ function DistributedSystemsPage({ onBack }: { onBack: () => void }) {
           </p>
           <h1 className="text-3xl font-semibold tracking-tight">Distributed Systems</h1>
           <p className="text-muted-foreground text-sm">
-            Express hello-world: install, run, and inspect the response.
+            Stock Order Service — exercise 0010 (EN / DE).
           </p>
         </header>
-
-        <ul className="flex list-none flex-col gap-4 p-0">
-          <li>
-            <Card>
-              <CardHeader>
-                <CardTitle>Requirements</CardTitle>
-                <CardDescription>What you need before starting.</CardDescription>
-              </CardHeader>
-              <CardContent className="text-sm leading-relaxed text-muted-foreground">
-                <ul className="list-disc space-y-1 pl-5">
-                  <li>
-                    <span className="text-foreground font-medium">Node.js 20 LTS</span> or
-                    newer (<code className="font-mono text-xs">node -v</code> → e.g.{' '}
-                    <code className="font-mono text-xs">v20.18.0</code>)
-                  </li>
-                  <li>
-                    <span className="text-foreground font-medium">npm</span> (comes with
-                    Node)
-                  </li>
-                  <li>
-                    Package: <code className="font-mono text-xs">express</code>
-                  </li>
-                  <li>Optional: Postman (or browser / curl) to call the endpoint</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </li>
-
-          <li>
-            <Card>
-              <CardHeader>
-                <CardTitle>Install &amp; run</CardTitle>
-                <CardDescription>Create the project, install Express, start the server.</CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <DocsCodeBlock title="terminal" language="bash" code={INSTALL_COMMANDS} />
-                <DocsCodeBlock
-                  title="server console (after node app.cjs)"
-                  language="bash"
-                  code={TERMINAL_OUTPUT}
-                />
-              </CardContent>
-            </Card>
-          </li>
-
-          <li>
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-mono text-base">app.cjs</CardTitle>
-                <CardDescription>Minimal Express hello-world server.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DocsCodeBlock title="app.cjs" language="bash" code={APP_CJS} />
-              </CardContent>
-            </Card>
-          </li>
-
-          <li>
-            <Card>
-              <CardHeader>
-                <CardTitle>Postman — what you see</CardTitle>
-                <CardDescription>
-                  GET / returns a plain string body (text/html), not JSON.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DocsCodeBlock title="Postman response (ASCII)" language="bash" code={POSTMAN_ASCII} />
-              </CardContent>
-            </Card>
-          </li>
-        </ul>
 
         <OrderServiceGuide />
       </main>
