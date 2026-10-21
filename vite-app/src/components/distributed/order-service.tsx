@@ -62,6 +62,10 @@ app.listen(PORT, () => {
     console.info(\`Server is running on port \${PORT}\`)
 });`
 
+const HELLO_CODE = `app.get('/hello', (req, res) => {
+    res.status(STATUS_OK).send('Hallo Welt');
+});`
+
 const SERVER_START_CODE =`const PORT = 6010;
 app.listen(PORT, () => {
    console.info(\`Server is running on port \${PORT}\`)
