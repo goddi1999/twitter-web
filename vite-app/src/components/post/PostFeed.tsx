@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { FieldInput } from '@/components/ui/field-input'
 import {
@@ -19,6 +19,8 @@ const CARD_WIDTH = '18.75rem'
 
 type PostFeedProps = {
   initialPosts?: Post[]
+  /** Rendered beneath the avatar row. */
+  nav?: ReactNode
   className?: string
 }
 
@@ -28,7 +30,7 @@ function matchesDescription(post: Post, query: string): boolean {
   return post.getText().toLowerCase().includes(normalized)
 }
 
-export function PostFeed({ initialPosts, className }: PostFeedProps) {
+export function PostFeed({ initialPosts, nav, className }: PostFeedProps) {
   const [posts, setPosts] = useState<Post[]>(() => initialPosts ?? [])
   const [query, setQuery] = useState('')
   const [groupPostId, setGroupPostId] = useState<string | null>(null)
@@ -80,6 +82,7 @@ export function PostFeed({ initialPosts, className }: PostFeedProps) {
           activePostId={groupPostId}
           onSelect={setGroupPostId}
         />
+        {nav}
       </div>
 
       <div

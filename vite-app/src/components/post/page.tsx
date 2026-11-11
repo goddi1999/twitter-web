@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { DemoPage } from '../demo-page'
 
@@ -10,7 +10,12 @@ type LoadState =
   | { status: 'ready'; posts: Post[] }
   | { status: 'error'; message: string }
 
-export function PostPage() {
+type PostPageProps = {
+  /** Rendered beneath the avatar row (also shown while loading or on error). */
+  nav?: ReactNode
+}
+
+export function PostPage({ nav }: PostPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
 
   useEffect(() => {
@@ -57,6 +62,9 @@ export function PostPage() {
       className="max-w-7xl"
     >
       <div className="w-full pb-24">
+        {state.status !== 'ready' ? (
+          <div className="mx-auto mb-6 w-full max-w-xl">{nav}</div>
+        ) : null}
         {state.status === 'loading' ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
             Loading posts…
@@ -64,7 +72,11 @@ export function PostPage() {
         ) : state.status === 'error' ? (
           <p className="py-10 text-center text-sm text-destructive">{state.message}</p>
         ) : (
-          <PostFeed key={state.posts.map((p) => p.id).join(',')} initialPosts={state.posts} />
+          <PostFeed
+            key={state.posts.map((p) => p.id).join(',')}
+            initialPosts={state.posts}
+            nav={nav}
+          />
         )}
       </div>
     </DemoPage>

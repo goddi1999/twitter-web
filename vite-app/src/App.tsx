@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft, BookOpen, Menu, Network, RefreshCw } from 'lucide-react'
+import { ArrowLeft, BookOpen, Network, RefreshCw } from 'lucide-react'
 
+import { AppNav, type AppView } from '@/components/app-nav'
 import { OrderServiceGuide } from '@/components/distributed'
 import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
-import { TreeMenu, type MenuItem } from '@/components/tree-menu'
 import { UsefulCommandsPage } from '@/components/useful-commands'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,24 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 type CourseId = 'fortgeschrittene' | 'distributed'
-type FpView = 'home' | 'create' | 'docs' | 'useful-commands'
-
-const FP_NAV_ITEMS: MenuItem[] = [
-  { id: 'home', label: 'Home' },
-  { id: 'create', label: 'Create post' },
-  { id: 'docs', label: 'Docs' },
-  { id: 'useful-commands', label: 'Useful commands' },
-]
 
 const COURSES: {
   id: CourseId
@@ -152,8 +137,7 @@ function DistributedSystemsPage({ onBack }: { onBack: () => void }) {
 }
 
 function FortgeschritteneApp({ onBack }: { onBack: () => void }) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [view, setView] = useState<FpView>('home')
+  const [view, setView] = useState<AppView>('home')
   const [feedKey, setFeedKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -162,6 +146,13 @@ function FortgeschritteneApp({ onBack }: { onBack: () => void }) {
     setFeedKey((key) => key + 1)
     window.setTimeout(() => setRefreshing(false), 400)
   }
+
+  function navigate(next: AppView) {
+    setView(next)
+    window.scrollTo({ top: 0 })
+  }
+
+  const nav = <AppNav view={view} onNavigate={navigate} />
 
   return (
     <>
@@ -175,43 +166,21 @@ function FortgeschritteneApp({ onBack }: { onBack: () => void }) {
           </IconButton>
         ) : null}
         <ThemeModeToggle />
-        <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-          <SheetTrigger asChild>
-            <IconButton label="Open menu">
-              <Menu className="size-5" />
-            </IconButton>
-          </SheetTrigger>
-          <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
-            <SheetHeader>
-              <SheetTitle>Fortgeschrittene Programmierung</SheetTitle>
-            </SheetHeader>
-            <TreeMenu
-              items={FP_NAV_ITEMS}
-              className="min-h-0 flex-1 justify-start pt-4 pb-4"
-              onSelect={(item) => {
-                if (
-                  item.id === 'home' ||
-                  item.id === 'create' ||
-                  item.id === 'docs' ||
-                  item.id === 'useful-commands'
-                ) {
-                  setView(item.id)
-                }
-                setMenuOpen(false)
-              }}
-            />
-          </SheetContent>
-        </Sheet>
       </FloatingActions>
 
-      {view === 'create' ? (
-        <CreatePostPage onPublished={() => setView('home')} />
-      ) : view === 'docs' ? (
-        <DocsPage />
-      ) : view === 'useful-commands' ? (
-        <UsefulCommandsPage />
+      {view === 'home' ? (
+        <PostPage key={feedKey} nav={nav} />
       ) : (
-        <PostPage key={feedKey} />
+        <>
+          <div className="mx-auto w-full max-w-xl px-6 pt-16 sm:pt-6">{nav}</div>
+          {view === 'create' ? (
+            <CreatePostPage onPublished={() => navigate('home')} />
+          ) : view === 'docs' ? (
+            <DocsPage />
+          ) : (
+            <UsefulCommandsPage />
+          )}
+        </>
       )}
     </>
   )
