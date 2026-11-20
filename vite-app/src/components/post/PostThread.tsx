@@ -128,6 +128,14 @@ export function PostThread({
             {post.getText()}
           </p>
 
+          {post.getImageUrl() ? (
+            <img
+              src={post.getImageUrl()}
+              alt=""
+              className="mt-3 max-h-[28rem] w-full rounded-xl border border-border/60 object-cover"
+            />
+          ) : null}
+
           <div className="mt-3 flex flex-nowrap items-center gap-3 overflow-x-auto text-sm text-muted-foreground">
             <time className="shrink-0 whitespace-nowrap" dateTime={createdAt.toISOString()}>
               {formatRelativeTime(createdAt)}

@@ -57,16 +57,18 @@ export class Post {
   private readonly comments: Comment[]
   private readonly author: Author
   private readonly createdAt: Date
+  private readonly imageUrl?: string
 
   constructor(
     text: string,
     author: Author,
     createdAt: Date = new Date(),
-    options?: { id?: string; likeCount?: number },
+    options?: { id?: string; likeCount?: number; imageUrl?: string },
   ) {
     this.id = options?.id ?? createId('post')
     this.text = assertValidText(text)
     this.likeCount = options?.likeCount ?? 0
+    this.imageUrl = options?.imageUrl
     this.comments = []
     this.author = author
     this.createdAt = createdAt
@@ -110,6 +112,10 @@ export class Post {
   getCreatedAt(): Date {
     return this.createdAt
   }
+
+  getImageUrl(): string | undefined {
+    return this.imageUrl
+  }
 }
 
 export type ApiAuthor = {
@@ -132,6 +138,7 @@ export type ApiPost = {
   comments?: ApiComment[]
   author?: ApiAuthor
   createdAt?: string
+  imageUrl?: string
 }
 
 function parseTimestamp(value: string | undefined, fallback: Date): Date {
@@ -153,6 +160,7 @@ export function postFromApi(dto: ApiPost): Post {
   const post = new Post(dto.text, authorFromApi(dto.author), createdAt, {
     id: dto.id,
     likeCount: typeof dto.likeCount === 'number' ? dto.likeCount : 0,
+    imageUrl: dto.imageUrl?.trim() || undefined,
   })
 
   for (const comment of dto.comments ?? []) {

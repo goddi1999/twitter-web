@@ -75,6 +75,7 @@ export function PostCard({
   const [canExpand, setCanExpand] = useState(false)
   const commentCount = post.getComments().length
   const likeCount = post.getLikeCount()
+  const imageUrl = post.getImageUrl()
 
   return (
     <Card
@@ -105,6 +106,14 @@ export function PostCard({
           expanded={expanded}
           onOverflowChange={setCanExpand}
         />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            loading="lazy"
+            className="mt-2 aspect-video w-full rounded-lg border border-border/60 object-cover"
+          />
+        ) : null}
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <div className="flex items-center gap-1">
             <Button

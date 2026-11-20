@@ -21,7 +21,10 @@ type PublishBody = {
  * Optional `avatarId` (e.g. `avatar_female_german_01`) or `author: { id }` selects a
  * `@wq-org/avatars` memoji; the server resolves name → displayName + handle + CDN url.
  *
- * Body: { "post": { id, text, likeCount, comments, createdAt?, avatarId? } }
+ * Optional `imageUrl` must be a public URL from the Supabase `post-images` bucket
+ * (the Java publish-client uploads the file and sends only this URL).
+ *
+ * Body: { "post": { id, text, likeCount, comments, createdAt?, avatarId?, imageUrl? } }
  */
 export async function POST(request: Request) {
   try {

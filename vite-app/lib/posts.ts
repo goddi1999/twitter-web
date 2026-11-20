@@ -35,6 +35,8 @@ export type PostDto = {
   comments: CommentDto[]
   author: Author
   createdAt: string
+  /** Public Supabase Storage URL (bucket `post-images`) — optional. */
+  imageUrl?: string
 }
 
 function authorFromMemoji(avatar: MemojiWithImageUrl): Author {
@@ -112,6 +114,27 @@ function parseOptionalAvatarId(raw: Record<string, unknown>): string | undefined
   return undefined
 }
 
+const IMAGE_OBJECT_NAME = /^[A-Za-z0-9_-]{1,64}\.(png|jpg)$/
+
+/**
+ * Optional image: only public URLs from our own `post-images` bucket are accepted,
+ * so the feed never renders arbitrary third-party URLs.
+ */
+function parseOptionalImageUrl(value: unknown): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined
+  const base = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '')
+  const prefix = `${base}/storage/v1/object/public/post-images/`
+  if (
+    typeof value !== 'string' ||
+    !base ||
+    !value.startsWith(prefix) ||
+    !IMAGE_OBJECT_NAME.test(value.slice(prefix.length))
+  ) {
+    throw new Error('imageUrl ist ungültig (nur Bilder aus dem post-images Bucket).')
+  }
+  return value
+}
+
 function parseComment(
   input: unknown,
   index: number,
@@ -179,7 +202,17 @@ export async function parseFullPost(
       ? raw.createdAt.trim()
       : (existing?.createdAt ?? new Date().toISOString())
 
-  return { id, text, likeCount, comments, author, createdAt }
+  const imageUrl = parseOptionalImageUrl(raw.imageUrl)
+
+  return {
+    id,
+    text,
+    likeCount,
+    comments,
+    author,
+    createdAt,
+    ...(imageUrl ? { imageUrl } : {}),
+  }
 }
 
 /** Feed: latest snapshot per `post.id`, newest publish first. */
