@@ -1,14 +1,19 @@
+import { useRef } from 'react'
 import { ArrowLeft, MessageCircle } from 'lucide-react'
 
+import { ActivityTimeline, type ActivityTimelineEvent } from '@/components/ui/activity-timeline'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { BlurredScrollArea } from '@/components/ui/blurred-scroll-area'
 import { Button } from '@/components/ui/button'
-import { PulseHeart } from '@/components/pulse-heart'
-import { Separator } from '@/components/ui/separator'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { useNow } from '@/hooks'
 import { cn } from '@/lib/utils'
 
 import { formatRelativeTime } from './format-relative-time'
+import { PostActions } from './PostActions'
 import type { Comment, Post } from './post.model'
+
+const COMMENT_UNIT = { one: 'comment', other: 'comments' } as const
 
 type PostThreadProps = {
   post: Post
@@ -17,167 +22,115 @@ type PostThreadProps = {
   className?: string
 }
 
-function CommentRow({
-  comment,
-  replyHandle,
-}: {
-  comment: Comment
-  replyHandle: string
-}) {
+function toTimelineEvent(comment: Comment): ActivityTimelineEvent {
   const author = comment.getAuthor()
-  const createdAt = comment.getCreatedAt()
-  const initials = author.displayName.slice(0, 2).toUpperCase()
-
-  return (
-    <article className="relative flex gap-3 px-4 py-3">
-      <div className="flex flex-col items-center">
-        <Avatar size="sm">
-          <AvatarImage src={author.avatarUrl} alt={author.displayName} />
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-x-1 text-sm leading-tight">
-          <span className="font-semibold text-foreground">{author.displayName}</span>
-          <span className="text-muted-foreground">@{author.handle}</span>
-          <span className="text-muted-foreground">·</span>
-          <time className="text-muted-foreground" dateTime={createdAt.toISOString()}>
-            {formatRelativeTime(createdAt)}
-          </time>
-        </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Replying to <span className="text-sky-500">@{replyHandle}</span>
-        </p>
-        <p className="mt-1 whitespace-pre-wrap text-[15px] leading-snug text-foreground">
-          {comment.getText()}
-        </p>
-      </div>
-    </article>
-  )
+  return {
+    id: comment.id,
+    at: comment.getCreatedAt().getTime(),
+    actor: author.displayName,
+    title: comment.getText(),
+    meta: <span className="text-sky-500">@{author.handle}</span>,
+    avatar: author.avatarUrl,
+  }
 }
 
-export function PostThread({
-  post,
-  onBack,
-  onLike,
-  className,
-}: PostThreadProps) {
+export function PostThread({ post, onBack, onLike, className }: PostThreadProps) {
+  const now = useNow()
+  const repliesRef = useRef<HTMLElement>(null)
   const author = post.getAuthor()
   const createdAt = post.getCreatedAt()
   const comments = post.getComments()
+  const imageUrl = post.getImageUrl()
   const initials = author.displayName.slice(0, 2).toUpperCase()
-  const likeCount = post.getLikeCount()
+  const events = comments.map(toTimelineEvent)
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col', className)}>
-      <header className="flex shrink-0 items-center gap-2 border-b border-border/60 px-2 py-2">
+      <header className="flex shrink-0 items-center gap-3 border-b border-border/60 px-2 py-1.5">
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Back"
+          aria-label="Back to feed"
           onClick={onBack}
+          className="size-11 rounded-full bg-muted text-muted-foreground ring-1 ring-border hover:bg-muted hover:text-foreground dark:ring-0"
         >
-          <ArrowLeft className="size-5" />
+          <ArrowLeft className="size-[22px]" />
         </Button>
         <h2 className="text-base font-semibold text-foreground">Thread</h2>
       </header>
 
       <BlurredScrollArea className="min-h-0 flex-1" hideScrollBar>
-        <div className="relative px-4 pt-4 pb-2">
-          {/* Thread spine behind avatars */}
-          {comments.length > 0 ? (
-            <div
-              aria-hidden
-              className="absolute top-14 bottom-0 left-[1.875rem] w-px bg-border"
-            />
-          ) : null}
-
-          <div className="relative flex gap-3">
-            <Avatar size="default" className="relative z-10 bg-background">
+        <article className="px-4 pt-4 pb-3">
+          <div className="flex items-center gap-3">
+            <Avatar size="default">
               <AvatarImage src={author.avatarUrl} alt={author.displayName} />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-1 text-sm leading-tight">
-                <span className="font-semibold text-foreground">{author.displayName}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">@{author.handle}</p>
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="truncate text-sm font-semibold text-foreground">{author.displayName}</p>
+              <p className="truncate text-sm text-sky-500">@{author.handle}</p>
             </div>
           </div>
 
-          <p className="mt-3 whitespace-pre-wrap text-[17px] leading-relaxed text-foreground">
+          <p className="mt-3 text-[17px] leading-relaxed whitespace-pre-wrap text-foreground">
             {post.getText()}
           </p>
 
-          {post.getImageUrl() ? (
+          {imageUrl ? (
             <img
-              src={post.getImageUrl()}
+              src={imageUrl}
               alt=""
               className="mt-3 max-h-[28rem] w-full rounded-xl border border-border/60 object-cover"
             />
           ) : null}
 
-          <div className="mt-3 flex flex-nowrap items-center gap-3 overflow-x-auto text-sm text-muted-foreground">
-            <time className="shrink-0 whitespace-nowrap" dateTime={createdAt.toISOString()}>
-              {formatRelativeTime(createdAt)}
-            </time>
-            <span className="shrink-0 text-border" aria-hidden>
-              ·
-            </span>
-            <p className="shrink-0 whitespace-nowrap">
-              <span className="font-semibold text-foreground">{likeCount}</span> Likes
-            </p>
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-1.5 px-2 text-muted-foreground transition-colors hover:text-sky-500"
-                aria-label={`${comments.length} comments`}
-              >
-                <MessageCircle className="size-4" />
-                <span>{comments.length}</span>
-              </Button>
-              <PulseHeart
-                count={likeCount}
-                size={18}
-                likedColor="#ef4444"
-                idleColor="oklch(0.55 0 0)"
-                pillColor="transparent"
-                textColor="currentColor"
-                className="text-muted-foreground"
-                label="Like"
-                onChange={(liked) => {
-                  if (liked) onLike(post)
-                }}
-              />
-            </div>
+          <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+            <time dateTime={createdAt.toISOString()}>{formatRelativeTime(createdAt)}</time>
+            <PostActions
+              className="ml-auto"
+              commentCount={comments.length}
+              likeCount={post.getLikeCount()}
+              onComment={() =>
+                repliesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+              onLike={() => onLike(post)}
+            />
           </div>
-        </div>
+        </article>
 
-        <Separator />
+        <section
+          ref={repliesRef}
+          aria-labelledby="thread-replies"
+          className="scroll-mt-2 border-t border-border/60 px-4 pt-4 pb-8"
+        >
+          <h3 id="thread-replies" className="text-sm text-muted-foreground">
+            Replying to <span className="text-sky-500">@{author.handle}</span>
+          </h3>
 
-        <div className="relative pb-8">
-          {comments.length > 0 ? (
-            <div
-              aria-hidden
-              className="absolute top-0 bottom-8 left-[1.875rem] w-px bg-border"
+          {events.length > 0 ? (
+            <ActivityTimeline
+              events={events}
+              now={now}
+              label={`Comments on ${author.displayName}’s post`}
+              timeZone="Europe/Berlin"
+              locale="en-GB"
+              unit={COMMENT_UNIT}
+              headingLevel={4}
+              className="mt-2 [--timeline-surface:var(--background)]"
             />
-          ) : null}
-          {comments.map((comment) => (
-            <CommentRow
-              key={comment.id}
-              comment={comment}
-              replyHandle={author.handle}
-            />
-          ))}
-          {comments.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-              No comments yet.
-            </p>
-          ) : null}
-        </div>
+          ) : (
+            <Empty className="mt-4 border p-6 md:p-6">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <MessageCircle />
+                </EmptyMedia>
+                <EmptyTitle>No comments yet</EmptyTitle>
+                <EmptyDescription>Replies to this post show up here.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </section>
       </BlurredScrollArea>
     </div>
   )

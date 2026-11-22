@@ -55,9 +55,9 @@ export const ROW_DROP = 6
 export const ROW_SCALE = 0.98
 export const ROW_BLUR = 5
 
-export const TAB = 56
+export const TAB = 44
 export const GAP = 4
-export const PAD = 6
+export const PAD = 4
 export const COLLAPSED_HEIGHT = TAB + PAD * 2
 // the intro starts as a single pill
 export const PILL_WIDTH = COLLAPSED_HEIGHT
@@ -67,7 +67,7 @@ export const MAX_PANEL_HEIGHT = 300
 // the card never gets closer than this to the viewport edges
 export const VIEWPORT_MARGIN = 24
 export const MIN_HEIGHT = 40
-export const RADIUS = 34
+export const RADIUS = 26
 // corners tighten by this much as the card opens
 export const RADIUS_OPEN_DROP = 8
 

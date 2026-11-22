@@ -1,10 +1,18 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 
+import { PULSE_HEART_COLORS, type PulseHeartColor } from './pulse-heart.constants'
 import './pulse-heart.css'
 
-export type PulseHeartIcon = 'heart' | 'star' | 'thumb'
+export type PulseHeartIcon = 'heart' | 'star' | 'thumb' | 'chat'
 
-export interface PulseHeartProps {
+export type PulseHeartProps = {
   /** Controlled liked state. Changes from outside bind without a run. */
   liked?: boolean
   /** Initial state when uncontrolled. @default false */
@@ -23,6 +31,8 @@ export interface PulseHeartProps {
   size?: number
   /** Pill corner radius in px. @default 32 */
   corner?: number
+  /** Palette colour for the liked state. Ignored when `likedColor` is set. */
+  color?: PulseHeartColor
   /** Colour after the flip, and of the hover tint and focus ring. @default '#ff4d4d' */
   likedColor?: string
   /** Colour before the flip. @default '#8b8b93' */
@@ -43,6 +53,13 @@ export interface PulseHeartProps {
   rollDuration?: number
   /** Dims the button and ignores input. @default false */
   disabled?: boolean
+  /**
+   * 'toggle' flips liked and moves the count by one. 'action' (e.g. open comments) only plays the
+   * pulse and calls `onPress`; liked and count stay as passed in. @default 'toggle'
+   */
+  variant?: 'toggle' | 'action'
+  /** Called on every press in the 'action' variant. */
+  onPress?: () => void
   /** Accessible name; the count is appended to it. @default 'Like' */
   label?: string
   /** Extra classes for the button. */
@@ -55,7 +72,7 @@ type Cell = { ch: string } | { top: string; bottom: string }
 
 const OUT = 0.4
 
-// Lucide's heart / star / thumbs-up path data, inlined so the swell
+// Lucide's heart / star / thumbs-up / message-circle path data, inlined so the swell
 // animation can grab the <g> and scale it directly.
 const ICONS: Record<PulseHeartIcon, readonly IconPath[]> = {
   heart: [
@@ -74,7 +91,15 @@ const ICONS: Record<PulseHeartIcon, readonly IconPath[]> = {
     },
     { d: 'M7 10v12' },
   ],
+  chat: [
+    {
+      d: 'M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719',
+    },
+  ],
 }
+
+const isBuiltInIcon = (value: unknown): value is PulseHeartIcon =>
+  typeof value === 'string' && value in ICONS
 
 const back = (k: number, c: number) => {
   const u = k - 1
@@ -96,7 +121,8 @@ export function PulseHeart({
   idleOutline = true,
   size = 40,
   corner = 32,
-  likedColor = '#ff4d4d',
+  color,
+  likedColor: likedColorProp,
   idleColor = '#8b8b93',
   pillColor = '#232326',
   textColor = '#ffffff',
@@ -106,12 +132,21 @@ export function PulseHeart({
   beat = 3,
   rollDuration = 350,
   disabled = false,
+  variant = 'toggle',
+  onPress,
   label = 'Like',
   className = '',
 }: PulseHeartProps) {
+  const likedColor = likedColorProp ?? (color ? PULSE_HEART_COLORS[color] : '#ff4d4d')
   const controlled = likedProp !== undefined
   const [inner, setInner] = useState(defaultLiked)
   const [total, setTotal] = useState(count)
+  // A new `count` from outside resets the running total, adjusted during render.
+  const [prevCount, setPrevCount] = useState(count)
+  if (count !== prevCount) {
+    setPrevCount(count)
+    setTotal(count)
+  }
   const liked = controlled ? likedProp : inner
   const [shown, setShown] = useState({ liked, count })
   const [roll, setRoll] = useState<Roll | null>(null)
@@ -126,13 +161,13 @@ export function PulseHeart({
   const viaPointer = useRef(false)
   const shownRef = useRef(shown)
   const logical = useRef({ liked, count: total })
-  logical.current = { liked, count: total }
   const cfg = useRef({ duration, dotSize, overshoot, beat, rollDuration })
-  cfg.current = { duration, dotSize, overshoot, beat, rollDuration }
 
-  useEffect(() => {
-    setTotal(count)
-  }, [count])
+  // The rAF loop reads the latest values through refs, synced after render.
+  useLayoutEffect(() => {
+    logical.current = { liked, count: total }
+    cfg.current = { duration, dotSize, overshoot, beat, rollDuration }
+  })
 
   useEffect(() => {
     if (raf.current) return
@@ -163,7 +198,7 @@ export function PulseHeart({
       cancelAnimationFrame(raf.current)
       clearTimeout(rollTimer.current)
     },
-    [],
+    []
   )
 
   const startRoll = (from: number, to: number) => {
@@ -240,6 +275,11 @@ export function PulseHeart({
     if (disabled || raf.current) return
     const pointer = viaPointer.current && e.detail !== 0
     viaPointer.current = false
+    if (variant === 'action') {
+      onPress?.()
+      if (pointer && !reducedMotion()) run(liked, total)
+      return
+    }
     const nextLiked = !liked
     const nextCount = total + (nextLiked ? 1 : -1)
     if (!controlled) setInner(nextLiked)
@@ -249,18 +289,15 @@ export function PulseHeart({
     else if (rootRef.current) rootRef.current.dataset.instant = ''
   }
 
-  const paths: readonly IconPath[] | null =
-    typeof icon === 'string' && icon in ICONS
-      ? ICONS[icon as PulseHeartIcon]
-      : typeof icon === 'string'
-        ? ICONS.heart
-        : null
+  const paths = isBuiltInIcon(icon) ? ICONS[icon] : typeof icon === 'string' ? ICONS.heart : null
   const text = format(shown.count)
   const cells: Cell[] = roll
     ? roll.at === -1
       ? [{ top: roll.up ? roll.a : roll.b, bottom: roll.up ? roll.b : roll.a }]
       : [...roll.b].map((ch, i) =>
-          i === roll.at ? { top: roll.up ? roll.a[i] : ch, bottom: roll.up ? ch : roll.a[i] } : { ch },
+          i === roll.at
+            ? { top: roll.up ? roll.a[i] : ch, bottom: roll.up ? ch : roll.a[i] }
+            : { ch }
         )
     : [...text].map((ch) => ({ ch }))
 
@@ -269,7 +306,7 @@ export function PulseHeart({
       ref={rootRef}
       type="button"
       data-slot="pulse-heart"
-      aria-pressed={liked}
+      aria-pressed={variant === 'toggle' ? liked : undefined}
       disabled={disabled}
       data-liked={String(shown.liked)}
       data-solid={idleOutline ? undefined : ''}
@@ -299,7 +336,7 @@ export function PulseHeart({
           {paths ? (
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <g ref={glyphRef}>
-                {paths.map((p: IconPath, i: number) => (
+                {paths.map((p, i) => (
                   <path key={i} d={p.d} vectorEffect="non-scaling-stroke" />
                 ))}
               </g>
@@ -320,7 +357,7 @@ export function PulseHeart({
                     <span>{cell.bottom}</span>
                   </span>
                 </span>
-              ),
+              )
             )}
           </span>
         ) : null}

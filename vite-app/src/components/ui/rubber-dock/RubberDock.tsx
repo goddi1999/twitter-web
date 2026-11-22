@@ -1,11 +1,4 @@
-import {
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from 'react'
+import { useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 
 import { cn } from '@/lib/utils'
@@ -28,7 +21,9 @@ import { useDockMorph } from './use-dock-morph'
 import { useRubberPill } from './use-rubber-pill'
 
 const TAB_BUTTON =
-  'grid size-14 shrink-0 cursor-[inherit] place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring'
+  'grid shrink-0 cursor-[inherit] place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring'
+// tabs are sized from TAB so the hit area always matches the pill geometry
+const TAB_SIZE = { width: TAB, height: TAB }
 
 /**
  * A tab bar whose pill stretches like rubber between tabs and can be dragged.
@@ -62,7 +57,10 @@ export function RubberDock({
 
   const count = items.length
   // an unknown value shows the first tab
-  const activeIndex = Math.max(0, items.findIndex((item) => item.value === value))
+  const activeIndex = Math.max(
+    0,
+    items.findIndex((item) => item.value === value)
+  )
   const activeItem = items[activeIndex]
   const expanded = open && activeItem?.content !== undefined
   const trackWidth = trackWidthFor(count)
@@ -219,10 +217,10 @@ export function RubberDock({
           aria-label={ariaLabel}
           aria-orientation="horizontal"
           className={cn(
-            'absolute bottom-1.5 left-1/2 -translate-x-1/2 touch-none select-none',
-            drag.dragging ? 'cursor-grabbing' : 'cursor-grab',
+            'absolute left-1/2 -translate-x-1/2 touch-none select-none',
+            drag.dragging ? 'cursor-grabbing' : 'cursor-grab'
           )}
-          style={{ width: trackWidth, height: TAB }}
+          style={{ width: trackWidth, height: TAB, bottom: PAD }}
           onKeyDown={handleTabsKeyDown}
           {...drag.handlers}
         >
@@ -244,6 +242,7 @@ export function RubberDock({
                   aria-expanded={active && item.content !== undefined ? expanded : undefined}
                   tabIndex={active ? 0 : -1}
                   className={TAB_BUTTON}
+                  style={TAB_SIZE}
                   onClick={() => handleTabClick(index)}
                 >
                   <TabIcon icon={item.icon} scale={pill.pops[index]} />
@@ -264,7 +263,7 @@ export function RubberDock({
             style={{ clipPath: pill.clipPath }}
           >
             {items.map((item, index) => (
-              <span key={item.value} className="grid size-14 shrink-0 place-items-center">
+              <span key={item.value} className="grid shrink-0 place-items-center" style={TAB_SIZE}>
                 <TabIcon icon={item.icon} scale={pill.pops[index]} />
               </span>
             ))}

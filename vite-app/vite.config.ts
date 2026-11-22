@@ -11,4 +11,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    // Plain `vite` has no serverless functions: forward /api to `npx vercel dev`.
+    proxy: {
+      "/api": process.env.API_PROXY_TARGET ?? "http://localhost:3000",
+    },
+  },
 })

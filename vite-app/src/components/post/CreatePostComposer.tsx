@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import {
   getAvatarUrls,
   getRandomAvatar,
@@ -8,6 +8,7 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { FieldTextarea } from '@/components/ui/field-textarea'
 import {
   Sheet,
   SheetContent,
@@ -43,7 +44,6 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
   const trimmed = text.trim()
   const isOverLimit = trimmed.length > MAX_TEXT_LENGTH
   const canPost = trimmed.length > 0 && !isOverLimit && !isSubmitting
-  const fieldId = useId()
   const errorMessage =
     error ??
     (isOverLimit ? `Too long — remove ${trimmed.length - MAX_TEXT_LENGTH} characters.` : null)
@@ -79,12 +79,6 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
       setText('')
       onPublished?.(post)
     } catch (err) {
-      // Plain Vite has no /api — treat network failure as local-only publish.
-      if (err instanceof TypeError) {
-        setText('')
-        onPublished?.(post)
-        return
-      }
       setError(err instanceof Error ? err.message : 'Could not publish')
     } finally {
       setIsSubmitting(false)
@@ -160,44 +154,25 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
         </div>
       </div>
 
-      <label htmlFor={fieldId} className="mt-4 mb-2 block text-sm font-medium text-foreground">
-        What&apos;s happening?
-      </label>
-      <textarea
-        id={fieldId}
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        rows={2}
+      <FieldTextarea
+        label="What's happening?"
         placeholder="Share a thought…"
-        aria-invalid={isOverLimit || error !== null}
-        aria-describedby={`${fieldId}-hint`}
-        className={cn(
-          'block min-h-20 w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-lg leading-relaxed text-foreground',
-          'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none',
-          isOverLimit &&
-            'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20'
-        )}
+        value={text}
+        onValueChange={setText}
+        maxLength={MAX_TEXT_LENGTH}
+        rows={2}
+        className="mt-4 pb-0"
       />
 
-      <div id={`${fieldId}-hint`}>
-        {errorMessage ? (
-          <p role="alert" className="mt-1.5 text-sm text-destructive">
-            {errorMessage}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <span
-          aria-live="polite"
-          className={cn(
-            'text-sm text-muted-foreground tabular-nums',
-            isOverLimit && 'text-destructive'
-          )}
+      <div className="mt-2 flex items-start justify-between gap-3">
+        <p role="alert" className="min-w-0 pt-2.5 text-sm text-destructive">
+          {errorMessage}
+        </p>
+        <Button
+          type="submit"
+          disabled={!canPost}
+          className="h-11 shrink-0 rounded-full px-8"
         >
-          {trimmed.length} / {MAX_TEXT_LENGTH}
-        </span>
-        <Button type="submit" disabled={!canPost} className="h-11 rounded-full px-8">
           {isSubmitting ? 'Posting…' : 'Post'}
         </Button>
       </div>
