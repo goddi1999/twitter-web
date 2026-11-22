@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { SelectTabs, TabsContent, type TabItem } from '@/components/tabs'
 
 import { DocsCodeBlock } from './code-block'
+import { DocsMarkdown } from './markdown'
 
 export const REQUEST_TABS: readonly TabItem[] = [
   { id: 'java', title: 'Java' },
@@ -16,6 +17,8 @@ type Snippet = {
   language: 'java' | 'bash' | 'curl'
   title: string
   code: string
+  /** Markdown shown under the block: what to watch out for. */
+  note?: string
 }
 
 type DocsRequestTabsProps = {
@@ -48,15 +51,13 @@ export function DocsRequestTabs({
             key={tab.id}
             tabId={tab.id}
             activeTabId={activeTabId}
-            className="mt-3 space-y-3 p-0"
+            className="mt-5 space-y-10 p-0"
           >
             {blocks.map((block) => (
-              <DocsCodeBlock
-                key={`${tab.id}-${block.title}`}
-                language={block.language}
-                title={block.title}
-                code={block.code}
-              />
+              <div key={`${tab.id}-${block.title}`} className="space-y-3">
+                <DocsCodeBlock language={block.language} title={block.title} code={block.code} />
+                {block.note ? <DocsMarkdown>{block.note}</DocsMarkdown> : null}
+              </div>
             ))}
           </TabsContent>
         )
