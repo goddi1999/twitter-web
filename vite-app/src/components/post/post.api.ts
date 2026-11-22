@@ -1,49 +1,23 @@
-import {
-  getRandomAvatar,
-  withImageUrl,
-  type MemojiWithImageUrl,
-} from '@wq-org/avatars'
+import { getRandomAvatar, withImageUrl, type MemojiWithImageUrl } from '@wq-org/avatars'
+
+import { authHeaders, requestJson } from '@/lib/request-json'
 
 import { Post, postFromApi, type ApiPost } from './post.model'
 import type { Author } from './post.types'
 
-const API_UNREACHABLE = import.meta.env.DEV
-  ? 'Can’t reach the posts API. Start it with `npx vercel dev`, then try again.'
-  : 'Can’t reach the posts API. Check your connection and try again.'
+export type ModerationAction = 'hide' | 'unhide' | 'delete'
 
-/**
- * fetch + JSON with honest errors: a network failure or a non-JSON reply (e.g. plain
- * `vite` serving the api/ source file) means the API is unreachable, not "no data".
- */
-async function requestJson(input: string, init?: RequestInit): Promise<unknown> {
-  let response: Response
-  try {
-    response = await fetch(input, {
-      ...init,
-      headers: { Accept: 'application/json', ...init?.headers },
-    })
-  } catch {
-    throw new Error(API_UNREACHABLE)
-  }
-
-  if (!response.headers.get('content-type')?.includes('application/json')) {
-    throw new Error(API_UNREACHABLE)
-  }
-
-  const payload: unknown = await response.json()
-  if (!response.ok) {
-    const message =
-      typeof payload === 'object' && payload !== null && 'error' in payload
-        ? String(payload.error)
-        : `Request failed (${response.status})`
-    throw new Error(message)
-  }
-  return payload
+export type Feed = {
+  posts: Post[]
+  /** Ids the admin hid; only ever filled when an admin token was sent. */
+  hiddenIds: ReadonlySet<string>
 }
 
-/** Latest snapshot per post id, from `GET /api/posts`. */
-export async function fetchPosts(): Promise<Post[]> {
-  const payload = await requestJson('/api/posts')
+type FeedPost = ApiPost & { moderation?: 'hidden' }
+
+/** Latest snapshot per post id, from `GET /api/posts`. An admin token also returns hidden posts. */
+export async function fetchPosts(token: string | null = null): Promise<Feed> {
+  const payload = await requestJson('/api/posts', { headers: authHeaders(token) })
   if (
     typeof payload !== 'object' ||
     payload === null ||
@@ -52,7 +26,24 @@ export async function fetchPosts(): Promise<Post[]> {
   ) {
     throw new Error('Unexpected response from /api/posts.')
   }
-  return (payload.posts as ApiPost[]).map(postFromApi)
+  const rows = payload.posts as FeedPost[]
+  return {
+    posts: rows.map(postFromApi),
+    hiddenIds: new Set(rows.filter((row) => row.moderation === 'hidden').map((row) => row.id)),
+  }
+}
+
+/** Admin only: hide, unhide or delete a post. */
+export async function moderatePost(
+  token: string,
+  postId: string,
+  action: ModerationAction
+): Promise<void> {
+  await requestJson('/api/admin/moderate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders(token) },
+    body: JSON.stringify({ postId, action }),
+  })
 }
 
 export function authorFromMemoji(avatar: MemojiWithImageUrl): Author {
@@ -96,7 +87,7 @@ export async function publishTestPost(): Promise<Post> {
     `Test post from ${avatar.name} at ${stamp}.`,
     authorFromMemoji(avatar),
     new Date(),
-    { id: crypto.randomUUID() },
+    { id: crypto.randomUUID() }
   )
   await publishPost(post, avatar.id)
   return post

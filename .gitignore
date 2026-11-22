@@ -1,2 +1,7 @@
 .vercel
 .env*
+
+# Supabase CLI local state (contains local secrets)
+supabase/.temp
+supabase/.branches
+.DS_Store

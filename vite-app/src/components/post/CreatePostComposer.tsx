@@ -168,11 +168,7 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
         <p role="alert" className="min-w-0 pt-2.5 text-sm text-destructive">
           {errorMessage}
         </p>
-        <Button
-          type="submit"
-          disabled={!canPost}
-          className="h-11 shrink-0 rounded-full px-8"
-        >
+        <Button type="submit" disabled={!canPost} className="h-11 shrink-0 rounded-full px-8">
           {isSubmitting ? 'Posting…' : 'Post'}
         </Button>
       </div>

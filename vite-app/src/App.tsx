@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { ArrowLeft, BookOpen, Network } from 'lucide-react'
 
+import { AdminSessionProvider } from '@/components/admin'
 import { AppNav, type AppView } from '@/components/app-nav'
 import { OrderServiceGuide } from '@/components/distributed'
 import { DocsPage } from '@/components/docs'
@@ -164,7 +165,7 @@ function FortgeschritteneApp({ onBack }: { onBack: () => void }) {
       {view === 'home' ? (
         <PostPage key={feedKey} onCreatePost={() => navigate('create')} />
       ) : view === 'create' ? (
-        <CreatePostPage onPublished={() => navigate('home')} />
+        <CreatePostPage />
       ) : (
         <DocsPage />
       )}
@@ -185,7 +186,9 @@ export function App() {
           <CourseHome onSelect={setCourse} />
         </>
       ) : course === 'fortgeschrittene' ? (
-        <FortgeschritteneApp onBack={() => setCourse(null)} />
+        <AdminSessionProvider>
+          <FortgeschritteneApp onBack={() => setCourse(null)} />
+        </AdminSessionProvider>
       ) : (
         <DistributedSystemsPage onBack={() => setCourse(null)} />
       )}

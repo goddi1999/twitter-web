@@ -29,7 +29,7 @@ export class Comment {
     text: string,
     author: Author,
     createdAt: Date = new Date(),
-    id: string = createId('comment'),
+    id: string = createId('comment')
   ) {
     this.id = id
     this.text = assertValidText(text)
@@ -63,7 +63,7 @@ export class Post {
     text: string,
     author: Author,
     createdAt: Date = new Date(),
-    options?: { id?: string; likeCount?: number; imageUrl?: string },
+    options?: { id?: string; likeCount?: number; imageUrl?: string }
   ) {
     this.id = options?.id ?? createId('post')
     this.text = assertValidText(text)
@@ -169,8 +169,8 @@ export function postFromApi(dto: ApiPost): Post {
         comment.text,
         authorFromApi(comment.author),
         parseTimestamp(comment.timestamp, createdAt),
-        comment.id?.trim() || createId('comment'),
-      ),
+        comment.id?.trim() || createId('comment')
+      )
     )
   }
 

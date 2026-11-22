@@ -11,9 +11,7 @@ export function getSupabase(): SupabaseClient {
   const key = process.env.SUPABASE_PUBLISHABLE_KEY?.trim()
 
   if (!url || !key) {
-    throw new Error(
-      'SUPABASE_URL und SUPABASE_PUBLISHABLE_KEY müssen gesetzt sein.',
-    )
+    throw new Error('SUPABASE_URL und SUPABASE_PUBLISHABLE_KEY müssen gesetzt sein.')
   }
 
   client = createClient(url, key, {

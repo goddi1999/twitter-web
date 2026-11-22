@@ -26,9 +26,7 @@ export async function getAllPublishes(): Promise<PostDto[]> {
   }
 
   const rows = (data ?? []) as PublishRow[]
-  return rows
-    .map((row) => asPostDto(row.post))
-    .filter((post): post is PostDto => post !== null)
+  return rows.map((row) => asPostDto(row.post)).filter((post): post is PostDto => post !== null)
 }
 
 /**
@@ -50,9 +48,7 @@ export async function getLatestPostsById(): Promise<PostDto[]> {
 }
 
 /** Latest publish for a logical post id, or undefined. */
-export async function getLatestPublish(
-  postId: string,
-): Promise<PostDto | undefined> {
+export async function getLatestPublish(postId: string): Promise<PostDto | undefined> {
   const { data, error } = await getSupabase()
     .from('publishes')
     .select('post, created_at')

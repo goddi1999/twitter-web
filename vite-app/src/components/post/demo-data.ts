@@ -34,11 +34,15 @@ function randomAuthor(): Author {
 function decoratePost(post: Post, authors: Author[], index: number): void {
   const commentAuthor = authors[(index + 1) % authors.length]
   post.addComment(
-    new Comment('Nice take — thanks for sharing.', commentAuthor, minutesAgo(5 + index)),
+    new Comment('Nice take — thanks for sharing.', commentAuthor, minutesAgo(5 + index))
   )
   if (index % 2 === 0) {
     post.addComment(
-      new Comment('Opening the thread from the grid feels natural.', authors[index % authors.length], minutesAgo(2 + index)),
+      new Comment(
+        'Opening the thread from the grid feels natural.',
+        authors[index % authors.length],
+        minutesAgo(2 + index)
+      )
     )
   }
   const likes = (index % 4) + 1

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { EyeOff } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,9 @@ import { cn } from '@/lib/utils'
 
 import { formatRelativeTime } from './format-relative-time'
 import { PostActions } from './PostActions'
+import { PostAdminMenu } from './PostAdminMenu'
 import { PostBodyText } from './PostBodyText'
+import type { ModerationAction } from './post.api'
 import type { Post } from './post.model'
 import type { Author } from './post.types'
 
@@ -18,6 +21,10 @@ type PostCardProps = {
   post: Post
   onOpen?: (post: Post) => void
   onLike?: (post: Post) => void
+  /** Admin only: hidden posts stay visible to the admin, dimmed and labeled. */
+  hidden?: boolean
+  /** Admin only: shows the ⋯ menu. */
+  onModerate?: (post: Post, action: ModerationAction) => Promise<void>
   className?: string
 }
 
@@ -42,7 +49,14 @@ function AuthorRow({ author, createdAt }: { author: Author; createdAt: Date }) {
   )
 }
 
-export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
+export function PostCard({
+  post,
+  onOpen,
+  onLike,
+  hidden = false,
+  onModerate,
+  className,
+}: PostCardProps) {
   const author = post.getAuthor()
   const createdAt = post.getCreatedAt()
   const [expanded, setExpanded] = useState(false)
@@ -61,6 +75,7 @@ export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
         POST_CARD_WIDTH_CLASS,
         'shrink-0 cursor-pointer rounded-xl border border-border/60 bg-card/40 py-3 shadow-none',
         'transition-colors hover:bg-muted/40',
+        hidden && 'border-dashed',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none',
         className
       )}
@@ -74,16 +89,34 @@ export function PostCard({ post, onOpen, onLike, className }: PostCardProps) {
       }}
     >
       <CardContent className="flex h-full flex-col px-4">
-        <AuthorRow author={author} createdAt={createdAt} />
-        <PostBodyText text={post.getText()} expanded={expanded} onOverflowChange={setCanExpand} />
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt=""
-            loading="lazy"
-            className="mt-2 aspect-video w-full rounded-lg border border-border/60 object-cover"
-          />
+        <div className="flex items-center gap-1">
+          <AuthorRow author={author} createdAt={createdAt} />
+          {onModerate ? (
+            <PostAdminMenu
+              authorName={author.displayName}
+              hidden={hidden}
+              onModerate={(action) => onModerate(post, action)}
+              className="-my-2 -mr-2 ml-auto shrink-0"
+            />
+          ) : null}
+        </div>
+        {hidden ? (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <EyeOff className="size-3.5" aria-hidden />
+            Hidden from the feed
+          </p>
         ) : null}
+        <div className={cn('flex flex-1 flex-col', hidden && 'opacity-50')}>
+          <PostBodyText text={post.getText()} expanded={expanded} onOverflowChange={setCanExpand} />
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt=""
+              loading="lazy"
+              className="mt-2 aspect-video w-full rounded-lg border border-border/60 object-cover"
+            />
+          ) : null}
+        </div>
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <PostActions
             commentCount={commentCount}

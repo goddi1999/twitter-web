@@ -11,12 +11,7 @@ type PostBodyTextProps = {
   className?: string
 }
 
-export function PostBodyText({
-  text,
-  expanded,
-  onOverflowChange,
-  className,
-}: PostBodyTextProps) {
+export function PostBodyText({ text, expanded, onOverflowChange, className }: PostBodyTextProps) {
   const textRef = useRef<HTMLParagraphElement>(null)
 
   useEffect(() => {
@@ -42,9 +37,9 @@ export function PostBodyText({
     <p
       ref={textRef}
       className={cn(
-        'mt-2 whitespace-pre-wrap text-[15px] leading-snug text-foreground',
+        'mt-2 text-[15px] leading-snug whitespace-pre-wrap text-foreground',
         !expanded && 'line-clamp-4',
-        className,
+        className
       )}
       style={!expanded ? { WebkitLineClamp: CLAMP_LINES } : undefined}
     >

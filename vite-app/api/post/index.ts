@@ -30,13 +30,9 @@ export async function POST(request: Request) {
   try {
     const body = await readJson<PublishBody>(request)
     const rawPost =
-      body.post && typeof body.post === 'object'
-        ? (body.post as Record<string, unknown>)
-        : null
+      body.post && typeof body.post === 'object' ? (body.post as Record<string, unknown>) : null
     const existingId =
-      rawPost && typeof rawPost.id === 'string' && rawPost.id.trim()
-        ? rawPost.id.trim()
-        : null
+      rawPost && typeof rawPost.id === 'string' && rawPost.id.trim() ? rawPost.id.trim() : null
     const previous = existingId ? await getPost(existingId) : null
     const parsed = await parseFullPost(body.post, previous)
     const post = await publishPost(parsed)

@@ -15,12 +15,7 @@ type PostGroupTabsProps = {
   className?: string
 }
 
-export function PostGroupTabs({
-  posts,
-  activePostId,
-  onSelect,
-  className,
-}: PostGroupTabsProps) {
+export function PostGroupTabs({ posts, activePostId, onSelect, className }: PostGroupTabsProps) {
   return (
     <BlurredScrollArea
       orientation="horizontal"
@@ -66,7 +61,7 @@ export function PostGroupTabs({
                   className="size-8"
                 />
               </span>
-              <span className="w-full line-clamp-1 break-all font-mono text-[10px] text-muted-foreground">
+              <span className="line-clamp-1 w-full font-mono text-[10px] break-all text-muted-foreground">
                 {post.id}
               </span>
             </Button>

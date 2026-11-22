@@ -5,12 +5,7 @@ import {
   type MemojiWithImageUrl,
 } from '@wq-org/avatars'
 
-import {
-  appendPublish,
-  getAllPublishes,
-  getLatestPostsById,
-  getLatestPublish,
-} from './store.js'
+import { appendPublish, getAllPublishes, getLatestPostsById, getLatestPublish } from './store.js'
 
 export const MAX_TEXT_LENGTH = 280
 
@@ -82,10 +77,7 @@ export function assertValidText(text: unknown, label = 'Text'): string {
  * displayName / handle / avatarUrl from the client are ignored.
  * Reuses the previous author when republishing the same post/comment id.
  */
-export function resolveAuthor(
-  avatarId: unknown,
-  previous?: Author,
-): Author {
+export function resolveAuthor(avatarId: unknown, previous?: Author): Author {
   if (previous) return previous
   if (typeof avatarId === 'string' && avatarId.trim()) {
     return authorFromAvatarId(avatarId)
@@ -138,16 +130,13 @@ function parseOptionalImageUrl(value: unknown): string | undefined {
 function parseComment(
   input: unknown,
   index: number,
-  previousById: Map<string, CommentDto>,
+  previousById: Map<string, CommentDto>
 ): CommentDto {
   if (!input || typeof input !== 'object') {
     throw new Error(`comments[${index}] ist ungültig.`)
   }
   const raw = input as Record<string, unknown>
-  const id =
-    typeof raw.id === 'string' && raw.id.trim()
-      ? raw.id.trim()
-      : crypto.randomUUID()
+  const id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : crypto.randomUUID()
   const text = assertValidText(raw.text, `Kommentar[${index}]`)
   const timestamp =
     typeof raw.timestamp === 'string' && raw.timestamp.trim()
@@ -163,10 +152,7 @@ function parseComment(
  * Optional `avatarId` (or `author.id`) selects a memoji; otherwise random.
  * Client must not send displayName / handle / avatarUrl — server resolves them.
  */
-export async function parseFullPost(
-  input: unknown,
-  previous?: PostDto | null,
-): Promise<PostDto> {
+export async function parseFullPost(input: unknown, previous?: PostDto | null): Promise<PostDto> {
   if (!input || typeof input !== 'object') {
     throw new Error('post ist erforderlich.')
   }
@@ -187,13 +173,11 @@ export async function parseFullPost(
 
   const existing = previous ?? (await getLatestPublish(id)) ?? null
   const previousComments = new Map<string, CommentDto>(
-    (existing?.comments ?? []).map((comment) => [comment.id, comment]),
+    (existing?.comments ?? []).map((comment) => [comment.id, comment])
   )
 
   const comments = Array.isArray(raw.comments)
-    ? raw.comments.map((comment, index) =>
-        parseComment(comment, index, previousComments),
-      )
+    ? raw.comments.map((comment, index) => parseComment(comment, index, previousComments))
     : []
 
   const author = resolveAuthor(parseOptionalAvatarId(raw), existing?.author)

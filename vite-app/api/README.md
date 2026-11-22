@@ -11,9 +11,9 @@ HTTP handlers under `/api` **list** posts and **append** full post publishes. Sh
 
 ### Env (Vercel project `vite-app`)
 
-| Variable | Purpose |
-| --- | --- |
-| `SUPABASE_URL` | Project URL |
+| Variable                   | Purpose                                    |
+| -------------------------- | ------------------------------------------ |
+| `SUPABASE_URL`             | Project URL                                |
 | `SUPABASE_PUBLISHABLE_KEY` | Anon / publishable key for select + insert |
 
 Redeploy after changing env. Local: `npx vercel env pull .env.local --yes` then `npx vercel dev`.
@@ -85,8 +85,8 @@ curl -sS -X POST https://twitter-web-inky.vercel.app/api/post \
 
 Base URL `http://localhost:3000` with the same paths (`vercel dev`).
 
-- **`posts`**: one entry per `post.id` (latest) — feed  
-- **`publishes`**: every append, newest first  
+- **`posts`**: one entry per `post.id` (latest) — feed
+- **`publishes`**: every append, newest first
 
 Always **201** on successful publish. Missing `post.id` → **400**.
 
@@ -124,16 +124,38 @@ Home UI fetches GET on load (+ Refresh)
 
 ## Configuration
 
-| Setting | Value |
-| --- | --- |
-| Runtime | `nodejs` |
-| Region | `fra1` |
-| Max text | 280 |
-| Storage | Supabase `publishes` |
-| Env | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` |
+| Setting  | Value                                      |
+| -------- | ------------------------------------------ |
+| Runtime  | `nodejs`                                   |
+| Region   | `fra1`                                     |
+| Max text | 280                                        |
+| Storage  | Supabase `publishes`                       |
+| Env      | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` |
 
 ## Known limitations
 
 - Publishable key needs RLS/grants allowing `select` + `insert` on `publishes`.
 - No auth; CORS `*`. Production `/api` may be VPN-restricted.
 - `npm run dev` does not serve functions — use `vercel dev`.
+
+## Admin (sign-in + moderation)
+
+Only the web app's **Create post** screen is gated. `POST /api/post` stays open for the Java publish-client.
+
+| Endpoint | Auth | Body | Result |
+| --- | --- | --- | --- |
+| `POST /api/admin/login` | — | `{ username, password }` | `{ token, expiresAt }` (12 h) · 401 · 503 |
+| `POST /api/admin/moderate` | `Authorization: Bearer <token>` | `{ postId, action: "hide" \| "unhide" \| "delete" }` | `{ postId, state }` · 401 · 409 (already deleted) · 503 |
+| `GET /api/posts` | optional Bearer | — | hidden/deleted left out; with a token, hidden posts come back marked `moderation: "hidden"` |
+
+Server env (never `VITE_`-prefixed):
+
+| Variable | Purpose |
+| --- | --- |
+| `ADMIN_USERNAME`, `ADMIN_PASSWORD` | the one admin account |
+| `ADMIN_SESSION_SECRET` | HMAC key for session tokens (`openssl rand -hex 32`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | writes/reads `moderation_actions` (RLS on, no anon policies) |
+
+Schema: `../supabase/migrations/20261122120000_moderation_actions.sql`.
+
+Local dev: `vercel dev` reads `.env` **instead of** the project's Development env when that file exists, so keep `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and the variables above together in `vite-app/.env` (gitignored).

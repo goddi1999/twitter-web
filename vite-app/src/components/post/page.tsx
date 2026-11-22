@@ -1,83 +1,17 @@
-import { useEffect, useState } from 'react'
-import { CloudOff, RefreshCw } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from '@/components/ui/empty'
-
 import { DemoPage } from '../demo-page'
 
+import { FeedError } from './FeedError'
 import { PostEmptyState } from './PostEmptyState'
 import { PostFeed } from './PostFeed'
-import { fetchPosts } from './post.api'
-import type { Post } from './post.model'
-
-type LoadState =
-  | { status: 'loading' }
-  | { status: 'ready'; posts: Post[] }
-  | { status: 'error'; message: string }
+import { useFeed } from './use-feed'
 
 type PostPageProps = {
   /** Opens the composer from the empty state. */
   onCreatePost: () => void
 }
 
-function FeedError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <Empty className="mx-auto max-w-xl border">
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <CloudOff />
-        </EmptyMedia>
-        <EmptyTitle>Couldn’t load posts</EmptyTitle>
-        <EmptyDescription>{message}</EmptyDescription>
-      </EmptyHeader>
-      <EmptyContent>
-        <Button type="button" size="lg" className="h-11 w-full rounded-full" onClick={onRetry}>
-          <RefreshCw />
-          Try again
-        </Button>
-      </EmptyContent>
-    </Empty>
-  )
-}
-
 export function PostPage({ onCreatePost }: PostPageProps) {
-  const [state, setState] = useState<LoadState>({ status: 'loading' })
-  const [reloadToken, setReloadToken] = useState(0)
-
-  function reload() {
-    setState({ status: 'loading' })
-    setReloadToken((token) => token + 1)
-  }
-
-  useEffect(() => {
-    let cancelled = false
-
-    fetchPosts().then(
-      (posts) => {
-        if (!cancelled) setState({ status: 'ready', posts })
-      },
-      (err: unknown) => {
-        if (!cancelled) {
-          setState({
-            status: 'error',
-            message: err instanceof Error ? err.message : 'Failed to load posts.',
-          })
-        }
-      },
-    )
-
-    return () => {
-      cancelled = true
-    }
-  }, [reloadToken])
+  const { state, reload, moderate } = useFeed()
 
   return (
     <DemoPage title="For You" align="center" className="max-w-7xl pt-6">
@@ -88,9 +22,17 @@ export function PostPage({ onCreatePost }: PostPageProps) {
           <FeedError message={state.message} onRetry={reload} />
         ) : (
           <PostFeed
-            key={state.posts.map((p) => p.id).join(',')}
-            initialPosts={state.posts}
-            empty={<PostEmptyState onCreate={onCreatePost} onTestPostPublished={reload} />}
+            key={state.feed.posts.map((p) => p.id).join(',')}
+            initialPosts={state.feed.posts}
+            hiddenIds={state.feed.hiddenIds}
+            onModerate={moderate}
+            empty={
+              <PostEmptyState
+                canWrite={moderate !== undefined}
+                onCreate={onCreatePost}
+                onTestPostPublished={reload}
+              />
+            }
           />
         )}
       </div>

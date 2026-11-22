@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { PostCard } from './PostCard'
 import { PostGroupTabs } from './PostGroupTabs'
 import { PostThread } from './PostThread'
+import type { ModerationAction } from './post.api'
 import type { Post } from './post.model'
 
 const CARD_WIDTH = '18.75rem'
@@ -21,6 +22,10 @@ type PostFeedProps = {
   initialPosts?: Post[]
   /** Rendered instead of the feed when there are no posts at all. */
   empty?: ReactNode
+  /** Admin only: ids of hidden posts, shown dimmed. */
+  hiddenIds?: ReadonlySet<string>
+  /** Admin only: shows the ⋯ menu on every card. */
+  onModerate?: (post: Post, action: ModerationAction) => Promise<void>
   className?: string
 }
 
@@ -30,7 +35,7 @@ function matchesDescription(post: Post, query: string): boolean {
   return post.getText().toLowerCase().includes(normalized)
 }
 
-export function PostFeed({ initialPosts, empty, className }: PostFeedProps) {
+export function PostFeed({ initialPosts, empty, hiddenIds, onModerate, className }: PostFeedProps) {
   const [posts, setPosts] = useState<Post[]>(() => initialPosts ?? [])
   const [query, setQuery] = useState('')
   const [groupPostId, setGroupPostId] = useState<string | null>(null)
@@ -56,11 +61,7 @@ export function PostFeed({ initialPosts, empty, className }: PostFeedProps) {
   }
 
   if (posts.length === 0 && empty) {
-    return (
-      <div className={cn('w-full text-left', className)}>
-        {empty}
-      </div>
-    )
+    return <div className={cn('w-full text-left', className)}>{empty}</div>
   }
 
   return (
@@ -75,11 +76,7 @@ export function PostFeed({ initialPosts, empty, className }: PostFeedProps) {
           autoComplete="off"
           showClearButton
         />
-        <PostGroupTabs
-          posts={posts}
-          activePostId={groupPostId}
-          onSelect={setGroupPostId}
-        />
+        <PostGroupTabs posts={posts} activePostId={groupPostId} onSelect={setGroupPostId} />
       </div>
 
       <div
@@ -92,6 +89,8 @@ export function PostFeed({ initialPosts, empty, className }: PostFeedProps) {
             post={post}
             onOpen={handleOpen}
             onLike={handleLike}
+            hidden={hiddenIds?.has(post.id) ?? false}
+            onModerate={onModerate}
           />
         ))}
       </div>
