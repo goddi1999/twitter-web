@@ -10,11 +10,9 @@ type CreatePostPageProps = {
 export function CreatePostPage({ onPublished }: CreatePostPageProps) {
   return (
     <DemoPage
-      eyebrow="shared / post"
       title="Create post"
-      description="Compose a post. Tap the avatar to pick a memoji — we resolve the name and handle from its id."
       align="center"
-      className="max-w-3xl"
+      className="max-w-3xl gap-4 pt-4 sm:gap-8 sm:pt-10"
     >
       <div className="flex w-full justify-center pb-24">
         <CreatePostComposer onPublished={onPublished} />

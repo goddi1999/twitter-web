@@ -1,12 +1,11 @@
 import { useState, type ReactNode } from 'react'
-import { ArrowLeft, BookOpen, Network, RefreshCw } from 'lucide-react'
+import { ArrowLeft, BookOpen, Network } from 'lucide-react'
 
 import { AppNav, type AppView } from '@/components/app-nav'
 import { OrderServiceGuide } from '@/components/distributed'
 import { DocsPage } from '@/components/docs'
 import { CreatePostPage, PostPage } from '@/components/post'
 import { ThemeModeToggle } from '@/components/ThemeModeToggle'
-import { UsefulCommandsPage } from '@/components/useful-commands'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -15,7 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 
 type CourseId = 'fortgeschrittene' | 'distributed'
 
@@ -141,46 +139,34 @@ function FortgeschritteneApp({ onBack }: { onBack: () => void }) {
   const [feedKey, setFeedKey] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
 
-  function handleRefresh() {
-    setRefreshing(true)
-    setFeedKey((key) => key + 1)
-    window.setTimeout(() => setRefreshing(false), 400)
-  }
-
   function navigate(next: AppView) {
     setView(next)
     window.scrollTo({ top: 0 })
   }
 
-  const nav = <AppNav view={view} onNavigate={navigate} />
+  function handleRefresh() {
+    setRefreshing(true)
+    navigate('home')
+    setFeedKey((key) => key + 1)
+    window.setTimeout(() => setRefreshing(false), 400)
+  }
 
   return (
     <>
-      <FloatingActions>
-        <IconButton label="Back to courses" onClick={onBack}>
-          <ArrowLeft className="size-5" />
-        </IconButton>
-        {view === 'home' ? (
-          <IconButton label="Refresh posts" onClick={handleRefresh}>
-            <RefreshCw className={cn('size-5', refreshing && 'animate-spin')} />
-          </IconButton>
-        ) : null}
-        <ThemeModeToggle />
-      </FloatingActions>
+      <AppNav
+        view={view}
+        onNavigate={navigate}
+        onBack={onBack}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
 
       {view === 'home' ? (
-        <PostPage key={feedKey} nav={nav} />
+        <PostPage key={feedKey} onCreatePost={() => navigate('create')} />
+      ) : view === 'create' ? (
+        <CreatePostPage onPublished={() => navigate('home')} />
       ) : (
-        <>
-          <div className="mx-auto w-full max-w-xl px-6 pt-16 sm:pt-6">{nav}</div>
-          {view === 'create' ? (
-            <CreatePostPage onPublished={() => navigate('home')} />
-          ) : view === 'docs' ? (
-            <DocsPage />
-          ) : (
-            <UsefulCommandsPage />
-          )}
-        </>
+        <DocsPage />
       )}
     </>
   )

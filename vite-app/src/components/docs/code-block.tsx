@@ -1,113 +1,34 @@
-import { useState } from 'react'
-import { Check, Copy } from 'lucide-react'
-import hljs from 'highlight.js/lib/core'
-import bash from 'highlight.js/lib/languages/bash'
-import java from 'highlight.js/lib/languages/java'
-import javascript from 'highlight.js/lib/languages/javascript'
-import json from 'highlight.js/lib/languages/json'
+import { CodeBlock } from '@/components/shared'
 
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-
-import './docs-highlight.css'
-
-hljs.registerLanguage('java', java)
-hljs.registerLanguage('javascript', javascript)
-hljs.registerLanguage('json', json)
-hljs.registerLanguage('bash', bash)
-hljs.registerLanguage('sh', bash)
-hljs.registerLanguage('shell', bash)
-hljs.registerLanguage('curl', bash)
-
-type DocsLanguage = 'java' | 'javascript' | 'json' | 'bash' | 'curl' | 'sh' | 'shell'
+/** Sky-500: the accent the feed already uses for handles and reply links. */
+const DOCS_ACCENT = '#0ea5e9'
 
 type DocsCodeBlockProps = {
   code: string
-  language?: DocsLanguage | string
+  /** java · javascript · json · bash (curl / sh / shell are shown as bash). */
+  language?: string
+  /** Shown in the header; falls back to the language. */
   title?: string
   className?: string
 }
 
-function normalizeLanguage(language: string): DocsLanguage {
+function toPrismLanguage(language: string): string {
   const value = language.toLowerCase()
-  if (value === 'java') return 'java'
-  if (value === 'javascript' || value === 'js') return 'javascript'
-  if (value === 'json') return 'json'
-  if (value === 'curl') return 'curl'
-  return 'bash'
+  if (value === 'js') return 'javascript'
+  if (value === 'curl' || value === 'sh' || value === 'shell') return 'bash'
+  return value
 }
 
-function highlightCode(code: string, lang: DocsLanguage): string | null {
-  try {
-    return hljs.highlight(code.replace(/\n$/, ''), {
-      language: lang === 'curl' ? 'bash' : lang,
-      ignoreIllegals: true,
-    }).value
-  } catch {
-    return null
-  }
-}
-
-export function DocsCodeBlock({
-  code,
-  language = 'bash',
-  title,
-  className,
-}: DocsCodeBlockProps) {
-  const [copied, setCopied] = useState(false)
-  const lang = normalizeLanguage(language)
-  const highlighted = highlightCode(code, lang)
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1500)
-    } catch {
-      /* ignore */
-    }
-  }
-
+/** Docs preset of the shared CodeBlock: dark frame, sky accent, line numbers, copy button. */
+export function DocsCodeBlock({ code, language = 'bash', title, className }: DocsCodeBlockProps) {
   return (
-    <div
-      className={cn(
-        'docs-code-block overflow-hidden rounded-xl border border-border/60 bg-zinc-950 shadow-none',
-        className,
-      )}
-    >
-      <div className="flex items-center justify-between gap-3 border-b border-border/40 px-4 py-2">
-        <div className="min-w-0">
-          {title ? (
-            <p className="truncate text-sm text-zinc-400">{title}</p>
-          ) : (
-            <p className="truncate font-mono text-xs uppercase tracking-wide text-zinc-500">
-              {lang}
-            </p>
-          )}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-8 shrink-0 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-          onClick={() => void copy()}
-          aria-label={copied ? 'Copied' : 'Copy code'}
-        >
-          {copied ? <Check className="size-4 text-emerald-400" /> : <Copy className="size-4" />}
-        </Button>
-      </div>
-      <div className="overflow-x-auto p-4 text-[13px] leading-relaxed">
-        <pre className="m-0 bg-transparent p-0">
-          {highlighted ? (
-            <code
-              className={`hljs language-${lang} font-mono bg-transparent`}
-              dangerouslySetInnerHTML={{ __html: highlighted }}
-            />
-          ) : (
-            <code className="font-mono bg-transparent text-zinc-100">{code}</code>
-          )}
-        </pre>
-      </div>
-    </div>
+    <CodeBlock
+      code={code}
+      language={toPrismLanguage(language)}
+      filename={title}
+      accent={DOCS_ACCENT}
+      mode="dark"
+      className={className}
+    />
   )
 }

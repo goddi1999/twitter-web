@@ -1,0 +1,3 @@
+interface:
+  display_name: "Feature Layers"
+  short_description: "Component→Hook→API feature layering"

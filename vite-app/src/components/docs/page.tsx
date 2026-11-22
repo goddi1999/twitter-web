@@ -1,61 +1,23 @@
 import { DemoPage } from '@/components/demo-page'
 
 import { AvatarCatalogTable } from './avatar-table'
-import { DocsCopyableLink } from './copyable-link'
 import { DocsMarkdown } from './markdown'
 import { JavaSetupTabs } from './java-setup'
 import { DocsRequestTabs, type RequestTabId } from './request-tabs'
 
 /** Official production API base. Local: `npx vercel dev` → http://localhost:3000 */
 const BASE_URL = 'https://twitter-web-inky.vercel.app'
-const LOCAL_URL = 'http://localhost:3000'
+const CLIENT_VERSION = 'v1.4.0'
 const CLIENT_REPO = 'https://github.com/goddi1999/social-publish-client'
 const AVATARS_REPO = 'https://github.com/wq-org/wq-avatars'
 
-const LIST_SNIPPETS: Record<
-  RequestTabId,
-  { language: 'java' | 'bash' | 'curl'; title: string; code: string }
-> = {
-  java: {
-    language: 'java',
-    title: 'GET /api/posts — Java',
-    code: `import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
-String baseUrl = "${BASE_URL}"; // local: http://localhost:3000
-
-HttpClient client = HttpClient.newHttpClient();
-HttpRequest request = HttpRequest.newBuilder()
-        .uri(URI.create(baseUrl + "/api/posts"))
-        .header("Accept", "application/json")
-        .GET()
-        .build();
-
-HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-System.out.println(response.body());`,
-  },
-  curl: {
-    language: 'curl',
-    title: 'GET /api/posts — curl',
-    code: `curl -sS ${BASE_URL}/api/posts \\
-  -H 'Accept: application/json'`,
-  },
-  bash: {
-    language: 'bash',
-    title: 'GET /api/posts — Bash',
-    code: `#!/usr/bin/env bash
-BASE_URL="${BASE_URL}"  # local: http://localhost:3000
-curl -sS "$BASE_URL/api/posts" -H 'Accept: application/json'`,
-  },
+type Snippet = {
+  language: 'java' | 'bash' | 'curl'
+  title: string
+  code: string
 }
 
-const PUBLISH_SNIPPETS: Record<
-  RequestTabId,
-  | { language: 'java' | 'bash' | 'curl'; title: string; code: string }
-  | { language: 'java' | 'bash' | 'curl'; title: string; code: string }[]
-> = {
+const PUBLISH_SNIPPETS: Record<RequestTabId, Snippet | Snippet[]> = {
   java: [
     {
       language: 'bash',
@@ -66,7 +28,7 @@ const PUBLISH_SNIPPETS: Record<
 }
 
 dependencies {
-    implementation 'com.github.goddi1999:social-publish-client:v1.2.0'
+    implementation 'com.github.goddi1999:social-publish-client:${CLIENT_VERSION}'
 }`,
     },
     {
@@ -77,56 +39,62 @@ import social.publish.PostPublisher.CommentData;
 import social.publish.PostPublisher.PublishResult;
 import social.publish.PublishException;
 
-// Kommentare mappen — ohne eigene IDs (Bibliothek generiert sie)
+// eigenes Modell -> Bibliotheks-Typen mappen (eigene Feldnamen bleiben intern erhalten)
 List<CommentData> comments = post.getComments().stream()
         .map(c -> new CommentData(c.getText(), c.getTimestamp()))
         .toList();
 
 try {
-    // Immer post.getPublishId() übergeben — die Bibliothek entscheidet intern:
-    // null/leer → neue ID (Erstveröffentlichung)
-    // gesetzt → Republish (gleicher Author)
+    // publishId: null/leer = neue ID, gesetzt = Republish (gleicher Author)
+    // imagePath: null/leer = ohne Bild, sonst lädt die Bibliothek das Bild hoch
     PublishResult result = PostPublisher.publish(
-            post.getPublishId(), post.getText(), post.getLikeCount(), comments);
+            post.getPublishId(), post.getText(), post.getImagePath(),
+            post.getLikeCount(), comments);
 
     post.setPublishId(result.postId());
     statusLabel.setText("Post veröffentlicht (Status " + result.statusCode() + ")");
+} catch (IllegalArgumentException e) {
+    statusLabel.setText("Ungültiges Bild: " + e.getMessage());
 } catch (PublishException e) {
     statusLabel.setText("Veröffentlichen fehlgeschlagen: " + e.getMessage());
 }`,
     },
     {
       language: 'java',
-      title: '3. Optional — Kommentar-IDs selbst setzen',
-      code: `List<CommentData> comments = post.getComments().stream()
-        .map(c -> new CommentData(c.getId(), c.getText(), c.getTimestamp()))
-        .toList();`,
+      title: '3. JavaFX — asynchron (empfohlen)',
+      code: `// Gleiche Regeln wie synchron — die UI friert nicht ein
+PostPublisher.publishAsync(post.getPublishId(), post.getText(), post.getImagePath(),
+        post.getLikeCount(), comments)
+    .thenAccept(result -> Platform.runLater(() -> {
+        post.setPublishId(result.postId());  // bleibt bei Republish gleich
+        statusLabel.setText("Post veröffentlicht (Status " + result.statusCode() + ")");
+    }))
+    .exceptionally(ex -> {
+        // Cause: PublishException oder IllegalArgumentException (ungültiges Bild)
+        Platform.runLater(() ->
+            statusLabel.setText("Fehler: " + ex.getCause().getMessage()));
+        return null;
+    });`,
     },
     {
       language: 'java',
       title: '4. Optional — mit avatarId',
-      code: `PublishResult result = PostPublisher.publish(
+      code: `// avatarId steht VOR imagePath (6 Parameter). imagePath darf null sein.
+PublishResult result = PostPublisher.publish(
         post.getPublishId(),
         post.getText(),
         "avatar_female_german_01",
+        post.getImagePath(),
         post.getLikeCount(),
         comments
 );`,
     },
     {
       language: 'java',
-      title: '5. JavaFX — asynchron (empfohlen)',
-      code: `// UI nicht blockieren — gleiche ID-Regel wie synchron
-PostPublisher.publishAsync(post.getPublishId(), post.getText(), post.getLikeCount(), comments)
-    .thenAccept(result -> Platform.runLater(() -> {
-        post.setPublishId(result.postId());
-        statusLabel.setText("Post veröffentlicht (Status " + result.statusCode() + ")");
-    }))
-    .exceptionally(ex -> {
-        Platform.runLater(() ->
-            statusLabel.setText("Fehler: " + ex.getCause().getMessage()));
-        return null;
-    });`,
+      title: '5. Optional — Kommentar-IDs selbst setzen',
+      code: `List<CommentData> comments = post.getComments().stream()
+        .map(c -> new CommentData(c.getId(), c.getText(), c.getTimestamp()))
+        .toList();`,
     },
   ],
   curl: {
@@ -172,30 +140,20 @@ EOF`,
   },
 }
 
-const INTRO_MD = `**Endpoints:** \`GET /api/posts\` · \`POST /api/post\`
-
-Java is the primary client for the course. curl / Bash are for quick checks. Copy any link below.
-`
-
-const LIST_MD = `Returns \`posts\` (latest per \`post.id\` for the feed) and \`publishes\` (full history).
-`
-
-const PUBLISH_MD = `## Was die Studierenden schreiben
-
-Immer \`post.getPublishId()\` übergeben — die Bibliothek entscheidet intern:
+const PUBLISH_MD = `Client: [\`social-publish-client\` ${CLIENT_VERSION}](${CLIENT_REPO}). Immer \`post.getPublishId()\` übergeben — die Bibliothek entscheidet intern:
 
 - **null / leer** → neue Post-ID (Erstveröffentlichung)
 - **gesetzt** → Republish (gleicher Author)
 - danach speichern: \`post.setPublishId(result.postId())\`
 
-Kommentar-IDs genauso: weglassen (Bibliothek generiert) oder optional mitsenden.
+**Bild (optional):** nur den Pfad übergeben (\`post.getImagePath()\`), PNG oder JPG, max. 5 MB. Die Bibliothek lädt das Bild selbst hoch. \`null\` oder leer = Post ohne Bild. Fehlt die Datei, ist sie zu groß oder kein PNG/JPG, kommt eine \`IllegalArgumentException\`.
 
-Für Like / Kommentar: erneut \`publish(postId, …)\` — Server reused den Author.
+Für Like / Kommentar: erneut \`publish(publishId, …)\` — der Server übernimmt den Author.
 
-\`avatarId\` ist komplett optional (Tabelle unten). Client: [\`social-publish-client\` v1.2.0](${CLIENT_REPO}).
+Kommentar-IDs: weglassen (Bibliothek vergibt sie) oder optional mitsenden.
 `
 
-const AVATARS_MD = `Optional: \`PostPublisher.publish(publishId, text, "avatar_female_german_01", likeCount, comments)\`.
+const AVATARS_MD = `Optional: \`PostPublisher.publish(publishId, text, "avatar_female_german_01", imagePath, likeCount, comments)\` — \`avatarId\` steht vor \`imagePath\`.
 
 Package: [\`@wq-org/avatars\`](${AVATARS_REPO}) · Repository: [\`wq-org/wq-avatars\`](${AVATARS_REPO}).
 `
@@ -203,67 +161,31 @@ Package: [\`@wq-org/avatars\`](${AVATARS_REPO}) · Repository: [\`wq-org/wq-avat
 export function DocsPage() {
   return (
     <DemoPage
-      eyebrow="docs"
       title="API docs"
-      description="Official production API. Java students use PostPublisher — pass publishId every time; the library generates or reuses it."
+      description={`Java students publish with PostPublisher (social-publish-client ${CLIENT_VERSION}). Pass publishId every time; the library generates or reuses it.`}
       align="start"
-      className="max-w-4xl pb-24"
+      className="max-w-4xl pt-6 pb-24"
     >
       <div className="w-full space-y-12 text-left">
-        <div className="space-y-3 rounded-xl border border-border/60 bg-card/40 px-4 py-3">
-          <DocsMarkdown>{INTRO_MD}</DocsMarkdown>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <DocsCopyableLink label="Production API" value={BASE_URL} />
-            <DocsCopyableLink label="Local (vercel dev)" value={LOCAL_URL} />
-            <DocsCopyableLink
-              label="List posts"
-              value={`${BASE_URL}/api/posts`}
-            />
-            <DocsCopyableLink
-              label="Publish post"
-              value={`${BASE_URL}/api/post`}
-            />
-            <DocsCopyableLink
-              label="Java client (JitPack)"
-              value="com.github.goddi1999:social-publish-client:v1.2.0"
-              href={CLIENT_REPO}
-            />
-            <DocsCopyableLink
-              label="Java client repo"
-              value={CLIENT_REPO}
-            />
-            <DocsCopyableLink
-              label="wq-avatars package"
-              value="@wq-org/avatars"
-              href={AVATARS_REPO}
-            />
-            <DocsCopyableLink label="wq-avatars repo" value={AVATARS_REPO} />
-          </div>
-        </div>
-
-        <section id="java-setup" className="scroll-mt-8 space-y-4">
+        <section id="java-setup" className="scroll-mt-24 space-y-4">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
             Java 25 (OpenJDK) installieren
           </h2>
           <JavaSetupTabs />
         </section>
 
-        <section id="list" className="scroll-mt-8 space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">List posts</h2>
-          <DocsMarkdown>{LIST_MD}</DocsMarkdown>
-          <DocsRequestTabs snippets={LIST_SNIPPETS} />
-        </section>
-
-        <section id="publish" className="scroll-mt-8 space-y-4">
+        <section id="publish" className="scroll-mt-24 space-y-4">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            Publish — Studierenden-Referenz
+            Post veröffentlichen
           </h2>
           <DocsMarkdown>{PUBLISH_MD}</DocsMarkdown>
           <DocsRequestTabs snippets={PUBLISH_SNIPPETS} />
         </section>
 
-        <section id="avatars" className="scroll-mt-8 space-y-4">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">Available avatars</h2>
+        <section id="avatars" className="scroll-mt-24 space-y-4">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Available avatars
+          </h2>
           <DocsMarkdown>{AVATARS_MD}</DocsMarkdown>
           <AvatarCatalogTable />
         </section>

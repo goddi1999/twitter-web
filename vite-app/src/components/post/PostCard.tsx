@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BadgeCheck, MessageCircle } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -19,19 +19,15 @@ type PostCardProps = {
   post: Post
   onOpen?: (post: Post) => void
   onLike?: (post: Post) => void
-  /** Show verified badge when the author has more than 3 posts in the feed. */
-  verified?: boolean
   className?: string
 }
 
 function AuthorRow({
   author,
   createdAt,
-  verified = false,
 }: {
   author: Author
   createdAt: Date
-  verified?: boolean
 }) {
   const initials = author.displayName.slice(0, 2).toUpperCase()
 
@@ -43,12 +39,6 @@ function AuthorRow({
       </Avatar>
       <div className="flex min-w-0 flex-1 items-center gap-x-1 text-sm leading-none">
         <span className="truncate font-semibold text-foreground">{author.displayName}</span>
-        {verified ? (
-          <BadgeCheck
-            className="size-4 shrink-0 fill-sky-500 text-sky-500"
-            aria-label="Verified"
-          />
-        ) : null}
         <span className="truncate text-muted-foreground">@{author.handle}</span>
         <span className="shrink-0 text-muted-foreground">·</span>
         <time
@@ -66,7 +56,6 @@ export function PostCard({
   post,
   onOpen,
   onLike,
-  verified = false,
   className,
 }: PostCardProps) {
   const author = post.getAuthor()
@@ -100,7 +89,7 @@ export function PostCard({
       }}
     >
       <CardContent className="flex h-full flex-col px-4">
-        <AuthorRow author={author} createdAt={createdAt} verified={verified} />
+        <AuthorRow author={author} createdAt={createdAt} />
         <PostBodyText
           text={post.getText()}
           expanded={expanded}

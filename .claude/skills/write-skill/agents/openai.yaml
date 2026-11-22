@@ -1,0 +1,3 @@
+interface:
+  display_name: "Write Skill"
+  short_description: "Author or prune agent skills (Matt Pocock)"

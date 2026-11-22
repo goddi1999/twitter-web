@@ -44,7 +44,7 @@ export function ThemeModeToggle({ variant = 'default', className }: ThemeModeTog
       )}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      {isDark ? <Sun className="size-[22px]" /> : <Moon className="size-[22px]" />}
       <span className="sr-only">
         {isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       </span>

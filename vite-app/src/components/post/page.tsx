@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 
 import { DemoPage } from '../demo-page'
 
+import { PostEmptyState } from './PostEmptyState'
 import { PostFeed } from './PostFeed'
 import { postFromApi, type ApiPost, type Post } from './post.model'
 
@@ -11,12 +12,18 @@ type LoadState =
   | { status: 'error'; message: string }
 
 type PostPageProps = {
-  /** Rendered beneath the avatar row (also shown while loading or on error). */
-  nav?: ReactNode
+  /** Opens the composer from the empty state. */
+  onCreatePost: () => void
 }
 
-export function PostPage({ nav }: PostPageProps) {
+export function PostPage({ onCreatePost }: PostPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [reloadToken, setReloadToken] = useState(0)
+
+  function handleTestPostPublished() {
+    setState({ status: 'loading' })
+    setReloadToken((token) => token + 1)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -51,20 +58,15 @@ export function PostPage({ nav }: PostPageProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadToken])
 
   return (
     <DemoPage
-      eyebrow="shared / post"
-      title="Post"
-      description="Fixed-width cards in a responsive grid. Text clamps at four lines with Expand; scroll for more."
+      title="For You"
       align="center"
-      className="max-w-7xl"
+      className="max-w-7xl pt-6"
     >
       <div className="w-full pb-24">
-        {state.status !== 'ready' ? (
-          <div className="mx-auto mb-6 w-full max-w-xl">{nav}</div>
-        ) : null}
         {state.status === 'loading' ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
             Loading posts…
@@ -75,7 +77,12 @@ export function PostPage({ nav }: PostPageProps) {
           <PostFeed
             key={state.posts.map((p) => p.id).join(',')}
             initialPosts={state.posts}
-            nav={nav}
+            empty={
+              <PostEmptyState
+                onCreate={onCreatePost}
+                onTestPostPublished={handleTestPostPublished}
+              />
+            }
           />
         )}
       </div>

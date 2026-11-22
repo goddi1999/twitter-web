@@ -1,0 +1,3 @@
+interface:
+  display_name: "Supabase Schema"
+  short_description: "Migrations, RLS, tenant isolation"

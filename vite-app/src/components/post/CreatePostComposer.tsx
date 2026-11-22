@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState, type FormEvent } from 'react'
 import {
   getAvatarUrls,
   getRandomAvatar,
@@ -8,7 +8,6 @@ import {
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { FieldTextarea } from '@/components/ui/field-textarea'
 import {
   Sheet,
   SheetContent,
@@ -19,22 +18,10 @@ import {
 } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
+import { authorFromMemoji, publishPost } from './post.api'
 import { MAX_TEXT_LENGTH, Post } from './post.model'
-import type { Author } from './post.types'
 
 const ALL_AVATARS = getAvatarUrls()
-
-function authorFromMemoji(avatar: MemojiWithImageUrl): Author {
-  const handle = avatar.name.toLowerCase().replace(/[^a-z0-9]+/g, '')
-  if (!handle) {
-    throw new Error(`Could not derive handle from avatar name: ${avatar.name}`)
-  }
-  return {
-    displayName: avatar.name,
-    handle,
-    avatarUrl: avatar.imageUrl,
-  }
-}
 
 function createRandomSelection(): MemojiWithImageUrl {
   return withImageUrl(getRandomAvatar())
@@ -54,12 +41,22 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
 
   const author = authorFromMemoji(avatar)
   const trimmed = text.trim()
-  const canPost = trimmed.length > 0 && trimmed.length <= MAX_TEXT_LENGTH && !isSubmitting
+  const isOverLimit = trimmed.length > MAX_TEXT_LENGTH
+  const canPost = trimmed.length > 0 && !isOverLimit && !isSubmitting
+  const fieldId = useId()
+  const errorMessage =
+    error ??
+    (isOverLimit ? `Too long — remove ${trimmed.length - MAX_TEXT_LENGTH} characters.` : null)
   const initials = author.displayName.slice(0, 2).toUpperCase()
 
   function selectAvatar(next: MemojiWithImageUrl) {
     setAvatar(next)
     setPickerOpen(false)
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void handlePublish()
   }
 
   async function handlePublish() {
@@ -77,27 +74,7 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
     }
 
     try {
-      const response = await fetch('/api/post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          post: {
-            id: post.id,
-            text: post.getText(),
-            likeCount: post.getLikeCount(),
-            comments: [],
-            createdAt: post.getCreatedAt().toISOString(),
-            avatarId: avatar.id,
-          },
-        }),
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as {
-          error?: string
-        } | null
-        throw new Error(payload?.error ?? `Publish failed (${response.status})`)
-      }
+      await publishPost(post, avatar.id)
 
       setText('')
       onPublished?.(post)
@@ -115,33 +92,28 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
   }
 
   return (
-    <div
+    <form
+      onSubmit={handleSubmit}
       className={cn(
-        'w-full max-w-xl rounded-2xl border border-border/60 bg-card/40 p-4 text-left shadow-none',
-        className,
+        'w-full max-w-xl rounded-2xl border border-border/60 bg-card/40 p-4 text-left',
+        className
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
           <SheetTrigger asChild>
             <button
               type="button"
-              className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="grid size-11 shrink-0 place-items-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
               aria-label={`Choose avatar (${author.displayName})`}
             >
-              <Avatar
-                size="default"
-                className="cursor-pointer ring-offset-background transition-opacity hover:opacity-80"
-              >
+              <Avatar size="tile" className="cursor-pointer transition-opacity hover:opacity-80">
                 <AvatarImage src={author.avatarUrl} alt={author.displayName} />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </button>
           </SheetTrigger>
-          <SheetContent
-            side="right"
-            className="flex w-full flex-col gap-0 p-0 sm:max-w-md"
-          >
+          <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
             <SheetHeader className="border-b border-border/60 px-4 py-4 text-left">
               <SheetTitle>Choose avatar</SheetTitle>
               <SheetDescription>
@@ -159,8 +131,8 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
                       onClick={() => selectAvatar(item)}
                       className={cn(
                         'flex flex-col items-center gap-1.5 rounded-xl p-2 text-center transition-colors',
-                        'hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                        selected && 'bg-sky-500/10 ring-2 ring-sky-500',
+                        'hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                        selected && 'bg-sky-500/10 ring-2 ring-sky-500'
                       )}
                       aria-pressed={selected}
                       aria-label={item.name}
@@ -182,39 +154,53 @@ export function CreatePostComposer({ onPublished, className }: CreatePostCompose
             </div>
           </SheetContent>
         </Sheet>
-
-        <div className="min-w-0 flex-1">
-          <p className="mb-1 text-sm font-semibold text-foreground">
-            {author.displayName}{' '}
-            <span className="font-normal text-muted-foreground">@{author.handle}</span>
-          </p>
-          <FieldTextarea
-            label="Post"
-            placeholder="What's happening?"
-            value={text}
-            onValueChange={setText}
-            maxLength={MAX_TEXT_LENGTH}
-            rows={4}
-            hideSeparator
-            showCounter
-            className="pb-0 [&_label]:sr-only [&_textarea]:min-h-28 [&_textarea]:text-xl [&_textarea]:leading-relaxed"
-          />
-
-          <div className="mt-3 flex items-center justify-end gap-3 border-t border-border/60 pt-3">
-            {error ? (
-              <p className="mr-auto text-sm text-destructive">{error}</p>
-            ) : null}
-            <Button
-              type="button"
-              disabled={!canPost}
-              onClick={() => void handlePublish()}
-              className="rounded-full px-5"
-            >
-              {isSubmitting ? 'Posting…' : 'Post'}
-            </Button>
-          </div>
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-sm font-semibold text-foreground">{author.displayName}</p>
+          <p className="truncate text-sm text-muted-foreground">@{author.handle}</p>
         </div>
       </div>
-    </div>
+
+      <label htmlFor={fieldId} className="mt-4 mb-2 block text-sm font-medium text-foreground">
+        What&apos;s happening?
+      </label>
+      <textarea
+        id={fieldId}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        rows={2}
+        placeholder="Share a thought…"
+        aria-invalid={isOverLimit || error !== null}
+        aria-describedby={`${fieldId}-hint`}
+        className={cn(
+          'block min-h-20 w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-lg leading-relaxed text-foreground',
+          'placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:outline-none',
+          isOverLimit &&
+            'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20'
+        )}
+      />
+
+      <div id={`${fieldId}-hint`}>
+        {errorMessage ? (
+          <p role="alert" className="mt-1.5 text-sm text-destructive">
+            {errorMessage}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <span
+          aria-live="polite"
+          className={cn(
+            'text-sm text-muted-foreground tabular-nums',
+            isOverLimit && 'text-destructive'
+          )}
+        >
+          {trimmed.length} / {MAX_TEXT_LENGTH}
+        </span>
+        <Button type="submit" disabled={!canPost} className="h-11 rounded-full px-8">
+          {isSubmitting ? 'Posting…' : 'Post'}
+        </Button>
+      </div>
+    </form>
   )
 }

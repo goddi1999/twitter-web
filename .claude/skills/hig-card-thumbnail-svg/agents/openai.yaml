@@ -1,0 +1,3 @@
+interface:
+  display_name: "HIG Card Thumbnail SVG"
+  short_description: "Generate HIG-style card thumbnail SVGs"

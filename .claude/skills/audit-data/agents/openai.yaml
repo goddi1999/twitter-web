@@ -1,0 +1,3 @@
+interface:
+  display_name: "Audit Data"
+  short_description: "DSGVO audit allowlist and forbidden fields"

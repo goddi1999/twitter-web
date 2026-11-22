@@ -1,0 +1,3 @@
+interface:
+  display_name: "Shadcn Components"
+  short_description: "Reusable shadcn-style UI components"
